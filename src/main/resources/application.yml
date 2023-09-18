@@ -1,5 +1,5 @@
 server:
-  port: 0
+  port: 8082
 spring:
   application:
     name: funding-service
@@ -32,7 +32,7 @@ eureka:
     service-url:
       defaultZone: http://127.0.0.1:8761/eureka
   instance:
-    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    instance-id: ${spring.application.name}:${server.port}
 management:
   endpoints:
     web:
