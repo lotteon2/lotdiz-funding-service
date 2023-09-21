@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: funding-deployment
+  labels:
+    app: funding-service
+    profile: prod
+spec:
+  selector:
+    matchLabels:
+      app: funding-service
+      profile: prod
+  # 앱이 Ready 상태가 될 때까지 기다리는 시간
+  minReadySeconds: 10
+  # 롤링 업데이트:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # 롤링 업데이트시 스케일아웃할 최대 pod 수
+      maxSurge: 1
+      maxUnavailable: 0
+  replicas: 1
+  template:
+    metadata:
+      name: funding-pod
+      labels:
+        app: funding-service
+        profile: prod
+    spec:
+      containers:
+        - name: funding-deployment
+          image: akak640/lotdiz-funding-service:${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          # Health Check
+          readinessProbe:
+            # 최초 health check전 지연시간
+            initialDelaySeconds: 10
+            # health check 간격 주기
+            periodSeconds: 30
+            # 성공 인정 횟수
+            successThreshold: 3
+            httpGet:
+              port: 8080
+              path: /actuator/health
+        - name: mysql
+          image: mysql:8.0.34
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "11111111"
+            - name: MYSQL_DATABASE
+              value: funding-service
+      restartPolicy: Always
+
