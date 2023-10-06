@@ -1,17 +1,17 @@
 package com.lotdiz.fundingservice.entity;
 
 import com.lotdiz.fundingservice.entity.common.BaseEntity;
+import javax.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
-
 @Entity
 @Getter
 @Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(name = "funding")
 public class Funding extends BaseEntity {

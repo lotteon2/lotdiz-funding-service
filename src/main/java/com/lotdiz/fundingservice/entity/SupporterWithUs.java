@@ -1,6 +1,7 @@
 package com.lotdiz.fundingservice.entity;
 
 import com.lotdiz.fundingservice.entity.common.BaseEntity;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import javax.persistence.*;
 @Entity
 @Getter
 @Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(name = "supporter_with_us")
 public class SupporterWithUs extends BaseEntity {

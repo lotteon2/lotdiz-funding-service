@@ -1,6 +1,7 @@
 package com.lotdiz.fundingservice.entity;
 
 import com.lotdiz.fundingservice.entity.common.BaseEntity;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import javax.persistence.*;
 @Entity
 @Getter
 @Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Table(name = "product_funding")
 public class ProductFunding extends BaseEntity {
@@ -20,7 +21,7 @@ public class ProductFunding extends BaseEntity {
   @Column(name = "product_funding_id")
   private Long productFundingId;
 
-  @Column(name = "product_id", unique = true, nullable = false)
+  @Column(name = "product_id", nullable = false)
   private Long productId;
 
   @ManyToOne(fetch = FetchType.LAZY)
