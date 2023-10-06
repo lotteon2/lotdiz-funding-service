@@ -1,4 +1,4 @@
-package com.lotdiz.fundingservice;
+package com.lotdiz.fundingservice.entity.common;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -13,11 +13,11 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity {
 
-    @CreatedDate
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+  @CreatedDate
+  @Column(name = "created_at")
+  private LocalDateTime createdAt;
 
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+  @LastModifiedDate
+  @Column(name = "updated_at")
+  private LocalDateTime updatedAt;
 }

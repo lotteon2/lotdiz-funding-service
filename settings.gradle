@@ -1,8 +1,1 @@
-dependencyResolutionManagement {
-    versionCatalogs {
-        yaml {
-            from files('gradle/yaml.versions.toml')
-        }
-    }
-}
 rootProject.name = 'funding-service'
