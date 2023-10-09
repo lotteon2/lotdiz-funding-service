@@ -22,10 +22,12 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create
-    show-sql: true
     generate-ddl: true
     # Bean이 생성되기 전에 ddl 실행
     defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
 eureka:
   client:
     register-with-eureka: true
@@ -34,3 +36,9 @@ eureka:
       defaultZone: http://127.0.0.1:8761/eureka
   instance:
     instance-id: ${spring.application.name}:${server.port}
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
