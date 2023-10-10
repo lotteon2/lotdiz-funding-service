@@ -2,12 +2,14 @@ package com.lotdiz.fundingservice.dto.request;
 
 import com.lotdiz.fundingservice.dto.common.ProductFundingDTO;
 import com.lotdiz.fundingservice.entity.Funding;
+import com.lotdiz.fundingservice.entity.SupporterWithUs;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Getter
 @Builder
@@ -25,6 +27,8 @@ public class CreateFundingRequest {
   private Long fundingMembershipDiscountAmount;
   private Long fundingUsedPoint;
   private Boolean fundingPrivacyAgreement;
+  private Boolean supporterWithUsIsNamePublic;
+  private Boolean supporterWithUsIsAmountPublic;
   private Long deliveryCost;
   private Long fundingPaymentsActualAmount;
   private String addressRecipientName;
@@ -34,7 +38,6 @@ public class CreateFundingRequest {
   private Boolean addressIsDefault;
 
   public Funding toFundingEntity() {
-    // return FundingMapper.INSTANCE.createFundingRequestDtoToFunding(this);
     return Funding.builder()
         .memberId(memberId)
         .projectId(projectId)
@@ -49,9 +52,12 @@ public class CreateFundingRequest {
         .build();
   }
 
-  // TODO: 결제, 배송지 정보는 payment-service, delivery-service로 보내 toEntity() 처리되도록
+  public SupporterWithUs toSupporterWithUsEntity(Funding funding){
+    return SupporterWithUs.builder()
+            .funding(funding)
+            .supporterWithUsIsNamePublic(supporterWithUsIsNamePublic)
+            .supporterWithUsIsAmountPublic(supporterWithUsIsAmountPublic)
+            .build();
+  }
 
-  //  public ProductFunding toProductFundingEntity(){
-  //    return FundingMapper
-  //  }
 }

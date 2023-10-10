@@ -14,13 +14,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class FundingController {
+public class FundingRestController {
   private final FundingService fundingService;
 
   @PostMapping("/projects/{projectId}/fundings")
   public ResponseEntity<SuccessResponse> createFunding(
       @RequestBody CreateFundingRequest createFundingRequest) {
+    // Funding, ProductFunding 저장.
     Long fundingId = fundingService.createFunding(createFundingRequest);
+
     GetFundingDetailResponse getFundingDetailResponse =
         fundingService.getFundingDetailResponse(fundingId);
 
@@ -29,7 +31,7 @@ public class FundingController {
             SuccessResponse.builder()
                 .code(String.valueOf(HttpStatus.OK.value()))
                 .message(HttpStatus.OK.name())
-                .detail("배송 조회 성공")
+                .detail("펀딩 성공")
                 .data(Map.of("fundingDetail", getFundingDetailResponse))
                 .build());
   }
