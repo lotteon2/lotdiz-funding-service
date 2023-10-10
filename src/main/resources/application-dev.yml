@@ -15,6 +15,13 @@ spring:
     url: jdbc:mysql://localhost:3306/funding-service
     username: root
     password: 11111111
+  jpa:
+    hibernate:
+      ddl-auto: create
+    generate-ddl: true
+    properties:
+      hibernate:
+        format_sql: true
 eureka:
   client:
     register-with-eureka: true
@@ -23,3 +30,9 @@ eureka:
       defaultZone: http://discovery-service:8761/eureka
   instance:
     instance-id: ${spring.application.name}:${server.port}
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
