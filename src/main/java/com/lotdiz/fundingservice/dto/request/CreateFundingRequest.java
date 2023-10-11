@@ -1,6 +1,6 @@
 package com.lotdiz.fundingservice.dto.request;
 
-import com.lotdiz.fundingservice.dto.common.ProductFundingDTO;
+import com.lotdiz.fundingservice.dto.common.ProductFundingDto;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
 import java.util.List;
@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 @Getter
 @Builder
@@ -18,7 +17,7 @@ import lombok.ToString;
 public class CreateFundingRequest {
   private Long memberId;
   private Long projectId;
-  private List<ProductFundingDTO> products;
+  private List<ProductFundingDto> products;
   private String fundingSupporterEmail;
   private Long fundingTotalAmount;
   private Boolean fundingIsRefundable;

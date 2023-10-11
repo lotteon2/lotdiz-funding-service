@@ -1,8 +1,14 @@
 package com.lotdiz.fundingservice.service;
 
+import com.lotdiz.fundingservice.dto.common.ProductFundingDto;
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequest;
-import com.lotdiz.fundingservice.dto.common.ProductFundingDTO;
+import com.lotdiz.fundingservice.dto.request.GetStockQuantityCheckExceedRequestDto;
+import com.lotdiz.fundingservice.dto.request.ProductStockCheckRequest;
+import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
+import com.lotdiz.fundingservice.dto.request.UpdateProductStockQuantityRequestDto;
 import com.lotdiz.fundingservice.dto.response.GetFundingDetailResponse;
+import com.lotdiz.fundingservice.dto.response.GetStockQuantityCheckExceedResponseDto;
+import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
@@ -10,6 +16,10 @@ import com.lotdiz.fundingservice.exception.FundingEntityNotFoundException;
 import com.lotdiz.fundingservice.repository.FundingRepository;
 import com.lotdiz.fundingservice.repository.ProductFundingRepository;
 import com.lotdiz.fundingservice.repository.SupporterWithUsRepository;
+import com.lotdiz.fundingservice.service.client.ProjectServiceClient;
+import com.lotdiz.fundingservice.service.manager.FundingProductManager;
+import com.lotdiz.fundingservice.utils.SuccessResponse;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.transaction.Transactional;
@@ -23,35 +33,87 @@ public class FundingService {
   private final FundingRepository fundingRepository;
   private final ProductFundingRepository productFundingRepository;
   private final SupporterWithUsRepository supporterWithUsRepository;
+  private final ProjectServiceClient projectServiceClient;
+  private final FundingProductManager fundingProductManager;
 
-  /* 펀딩하기 */
+  /**
+   * 펀딩하기
+   *
+   * @param createFundingRequest
+   * @return fundingId(Long)
+   */
   @Transactional
   public Long createFunding(CreateFundingRequest createFundingRequest) {
 
-    /** TODO
-     * 1) 재고 확인 -> 없다면 구매 불가, 있다면 재고 차감
-     * 1. productID 찾아내기.
-     * 2. 해당 product의 Stock이 사용자 quantity와 비교하여 충분한지 검사.
-     * 3. 재고 불충분시 404를 반환하여, 사용자에게 구매 오류가 발생하였음을 알린다.
-     * *orderProductManager => FundingProductManager 만들기
-     */
+    Long projectId = createFundingRequest.getProjectId();
+    List<ProductFundingDto> productFundingDtoRequests = createFundingRequest.getProducts();
+    List<ProductStockCheckRequest> productStockCheckRequests =
+        productFundingDtoRequests.stream()
+            .map(
+                productFundingDto ->
+                    new ProductStockCheckRequest(
+                        productFundingDto.getProductId()))
+            .collect(Collectors.toList());
+
+    GetStockQuantityCheckExceedRequestDto getStockQuantityCheckExceedRequestDto =
+        new GetStockQuantityCheckExceedRequestDto(productStockCheckRequests);
+
+    // project-service에서 재고 확인
+    SuccessResponse<GetStockQuantityCheckExceedResponseDto> response =
+        projectServiceClient.getStockQuantityCheckExceed(
+            projectId, getStockQuantityCheckExceedRequestDto);
+
+    List<ProductStockCheckResponse> productStockCheckResponseList =
+        response.getData().getProductStockCheckResponses();
+
+    List<ProductStockUpdateRequest> productStockUpdateRequests = new ArrayList<>();
+
+    for (int i = 0; i < productFundingDtoRequests.size(); i++) {
+      ProductFundingDto productFundingDto = productFundingDtoRequests.get(i);
+      ProductStockCheckResponse productStockCheckResponse = productStockCheckResponseList.get(i);
+
+      try {
+        fundingProductManager.checkEnoughStockQuantity(
+            productFundingDto.getProductFundingQuantity(),
+            productStockCheckResponse.getProductStockQuantity());
+
+        ProductStockUpdateRequest productStockUpdateRequest =
+            ProductStockUpdateRequest.builder()
+                .productId(productFundingDto.getProductId())
+                .productFundingQuantity(productFundingDto.getProductFundingQuantity())
+                .build();
+
+        productStockUpdateRequests.add(productStockUpdateRequest);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
 
     // (Funding) DTO->ENTITY
     Funding funding = createFundingRequest.toFundingEntity();
     Funding savedFunding = fundingRepository.save(funding);
 
     // (ProductFunding) DTO->ENTITY
-    List<ProductFundingDTO> productFundingDTORequests = createFundingRequest.getProducts();
     List<ProductFunding> productFundings =
-        productFundingDTORequests.stream()
-            .peek(productFundingDTO -> System.out.println(productFundingDTO.toString()))
-            .map(productFundingDTO -> productFundingDTO.toEntity(savedFunding))
+        productFundingDtoRequests.stream()
+            .map(productFundingDto -> productFundingDto.toEntity(savedFunding))
             .collect(Collectors.toList());
     productFundingRepository.saveAll(productFundings);
 
     // (SupporterWithUs) DTO -> ENTITY
     SupporterWithUs supporterWithUs = createFundingRequest.toSupporterWithUsEntity(savedFunding);
     supporterWithUsRepository.save(supporterWithUs);
+
+    // TODO: 결제
+
+
+    // project-service로 재고 update
+    UpdateProductStockQuantityRequestDto updateProductStockQuantityRequestDto =
+            new UpdateProductStockQuantityRequestDto(productStockUpdateRequests);
+
+    SuccessResponse successResponse =
+            projectServiceClient.updateStockQuantity(
+                    updateProductStockQuantityRequestDto);
 
     return savedFunding.getFundingId();
   }

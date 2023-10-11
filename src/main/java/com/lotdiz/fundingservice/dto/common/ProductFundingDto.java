@@ -4,11 +4,10 @@ import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.ToString;
 
 @Builder
 @Getter
-public class ProductFundingDTO {
+public class ProductFundingDto {
   private Long productId;
   private Long productFundingPrice;
   private Long productFundingQuantity;
@@ -22,8 +21,8 @@ public class ProductFundingDTO {
         .build();
   }
 
-  public static ProductFundingDTO fromEntity(ProductFunding productFunding) {
-    return ProductFundingDTO.builder()
+  public static ProductFundingDto fromEntity(ProductFunding productFunding) {
+    return ProductFundingDto.builder()
         .productId(productFunding.getProductId())
         .productFundingPrice(productFunding.getProductFundingPrice())
         .productFundingQuantity(productFunding.getProductFundingQuantity())
