@@ -1,19 +1,19 @@
 package com.lotdiz.fundingservice.service;
 
-import com.lotdiz.fundingservice.dto.common.ProductFundingDto;
+import com.lotdiz.fundingservice.dto.request.CreateDeliveryRequestDto;
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.GetStockQuantityCheckExceedRequestDto;
+import com.lotdiz.fundingservice.dto.request.ProductFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductStockCheckRequest;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
 import com.lotdiz.fundingservice.dto.request.UpdateProductStockQuantityRequestDto;
-import com.lotdiz.fundingservice.dto.response.GetFundingDetailResponseDto;
 import com.lotdiz.fundingservice.dto.response.GetStockQuantityCheckExceedResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
-import com.lotdiz.fundingservice.exception.FundingEntityNotFoundException;
 import com.lotdiz.fundingservice.exception.ProjectServiceOutOfServiceException;
+import com.lotdiz.fundingservice.messagequeue.kafka.DeliveryProducer;
 import com.lotdiz.fundingservice.repository.FundingRepository;
 import com.lotdiz.fundingservice.repository.ProductFundingRepository;
 import com.lotdiz.fundingservice.repository.SupporterWithUsRepository;
@@ -38,6 +38,7 @@ public class FundingService {
   private final ProjectServiceClient projectServiceClient;
   private final FundingProductManager fundingProductManager;
   private final CircuitBreakerFactory circuitBreakerFactory;
+  private final DeliveryProducer deliveryProducer;
 
   /**
    * 펀딩하기
@@ -46,15 +47,17 @@ public class FundingService {
    * @return fundingId(Long)
    */
   @Transactional
-  public Long createFunding(CreateFundingRequestDto createFundingRequestDto) {
+  public void createFunding(CreateFundingRequestDto createFundingRequestDto) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
     Long projectId = createFundingRequestDto.getProjectId();
-    List<ProductFundingDto> productFundingDtoRequests = createFundingRequestDto.getProducts();
+    List<ProductFundingRequestDto> productFundingRequestDtos =
+        createFundingRequestDto.getProducts();
     List<ProductStockCheckRequest> productStockCheckRequests =
-        productFundingDtoRequests.stream()
+        productFundingRequestDtos.stream()
             .map(
-                productFundingDto -> new ProductStockCheckRequest(productFundingDto.getProductId()))
+                productFundingRequestDto ->
+                    new ProductStockCheckRequest(productFundingRequestDto.getProductId()))
             .collect(Collectors.toList());
 
     GetStockQuantityCheckExceedRequestDto getStockQuantityCheckExceedRequestDto =
@@ -64,28 +67,30 @@ public class FundingService {
         (GetStockQuantityCheckExceedResponseDto)
             circuitBreaker.run(
                 () ->
-                    projectServiceClient.getStockQuantityCheckExceed(
-                        projectId, getStockQuantityCheckExceedRequestDto).getData(),
+                    projectServiceClient
+                        .getStockQuantityCheckExceed(
+                            projectId, getStockQuantityCheckExceedRequestDto)
+                        .getData(),
                 throwable -> new ProjectServiceOutOfServiceException());
 
     List<ProductStockCheckResponse> productStockCheckResponseList =
-              response.getProductStockCheckResponses();
+        response.getProductStockCheckResponses();
 
     List<ProductStockUpdateRequest> productStockUpdateRequests = new ArrayList<>();
 
-    for (int i = 0; i < productFundingDtoRequests.size(); i++) {
-      ProductFundingDto productFundingDto = productFundingDtoRequests.get(i);
+    for (int i = 0; i < productFundingRequestDtos.size(); i++) {
+      ProductFundingRequestDto productFundingRequestDto = productFundingRequestDtos.get(i);
       ProductStockCheckResponse productStockCheckResponse = productStockCheckResponseList.get(i);
 
       try {
         fundingProductManager.checkEnoughStockQuantity(
-            productFundingDto.getProductFundingQuantity(),
+            productFundingRequestDto.getProductFundingQuantity(),
             productStockCheckResponse.getProductStockQuantity());
 
         ProductStockUpdateRequest productStockUpdateRequest =
             ProductStockUpdateRequest.builder()
-                .productId(productFundingDto.getProductId())
-                .productFundingQuantity(productFundingDto.getProductFundingQuantity())
+                .productId(productFundingRequestDto.getProductId())
+                .productFundingQuantity(productFundingRequestDto.getProductFundingQuantity())
                 .build();
 
         productStockUpdateRequests.add(productStockUpdateRequest);
@@ -100,8 +105,8 @@ public class FundingService {
 
     // (ProductFunding) DTO->ENTITY
     List<ProductFunding> productFundings =
-        productFundingDtoRequests.stream()
-            .map(productFundingDto -> productFundingDto.toEntity(savedFunding))
+        productFundingRequestDtos.stream()
+            .map(productFundingRequestDto -> productFundingRequestDto.toEntity(savedFunding))
             .collect(Collectors.toList());
     productFundingRepository.saveAll(productFundings);
 
@@ -116,18 +121,35 @@ public class FundingService {
         new UpdateProductStockQuantityRequestDto(productStockUpdateRequests);
 
     circuitBreaker.run(
-        () ->
-            projectServiceClient.updateStockQuantity(updateProductStockQuantityRequestDto),
+        () -> projectServiceClient.updateStockQuantity(updateProductStockQuantityRequestDto),
         throwable -> new ProjectServiceOutOfServiceException());
 
-    return savedFunding.getFundingId();
+    // 배송 Kafka send
+    CreateDeliveryRequestDto createDeliveryRequestDto =
+        CreateDeliveryRequestDto.builder()
+            .fundingId(savedFunding.getFundingId())
+            .deliveryRecipientName(createFundingRequestDto.getDeliveryAddressRecipientName())
+            .deliveryRecipientPhoneNumber(
+                createFundingRequestDto.getDeliveryAddressRecipientPhoneNumber())
+            .deliveryRecipientEmail(createFundingRequestDto.getDeliveryAddressRecipientEmail())
+            .deliveryRoadName(createFundingRequestDto.getDeliveryAddressRoadName())
+            .deliveryAddressDetail(createFundingRequestDto.getDeliveryAddressRequest())
+            .deliveryZipCode(createFundingRequestDto.getDeliveryAddressZipCode())
+            .deliveryRequest(createFundingRequestDto.getDeliveryAddressRequest())
+            .deliveryCost(createFundingRequestDto.getDeliveryCost())
+            .build();
+    deliveryProducer.sendCreateDelivery(createDeliveryRequestDto);
   }
 
-  public GetFundingDetailResponseDto getFundingDetailResponse(Long fundingId) {
-    Funding findFunding =
-        fundingRepository.findById(fundingId).orElseThrow(FundingEntityNotFoundException::new);
-
-    List<ProductFunding> findProductFundings = productFundingRepository.findByFunding(findFunding);
-    return GetFundingDetailResponseDto.fromEntity(findFunding, findProductFundings);
-  }
+  //  public GetFundingDetailResponseDto getFundingDetailResponse(Long fundingId) {
+  //    Funding findFunding =
+  //        fundingRepository.findById(fundingId).orElseThrow(FundingEntityNotFoundException::new);
+  //
+  //    Optional<List<ProductFunding>> findProductFundingsOpt =
+  //        Optional.ofNullable(productFundingRepository.findByFunding(findFunding));
+  //    List<ProductFunding> findProductFundings =
+  //        findProductFundingsOpt.orElseThrow(ProductFundingEntityNotFoundException::new);
+  //
+  //    return GetFundingDetailResponseDto.fromEntity(findFunding, findProductFundings);
+  //  }
 }

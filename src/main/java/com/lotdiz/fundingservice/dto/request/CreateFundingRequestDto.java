@@ -1,6 +1,5 @@
 package com.lotdiz.fundingservice.dto.request;
 
-import com.lotdiz.fundingservice.dto.common.ProductFundingDto;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
 import java.util.List;
@@ -17,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class CreateFundingRequestDto {
   private Long memberId;
   private Long projectId;
-  private List<ProductFundingDto> products;
+  private List<ProductFundingRequestDto> products;
   private String fundingSupporterEmail;
   private Long fundingTotalAmount;
   private Boolean fundingIsRefundable;
@@ -30,11 +29,14 @@ public class CreateFundingRequestDto {
   private Boolean supporterWithUsIsAmountPublic;
   private Long deliveryCost;
   private Long fundingPaymentsActualAmount;
-  private String addressRecipientName;
-  private String addressRecipientPhoneNumber;
-  private String addressDetail;
-  private String addressZipCode;
-  private Boolean addressIsDefault;
+  private String deliveryAddressRecipientName;
+  private String deliveryAddressRecipientPhoneNumber;
+  private String deliveryAddressRecipientEmail;
+  private String deliveryAddressRequest;
+  private String deliveryAddressRoadName;
+  private String deliveryAddressDetail;
+  private String deliveryAddressZipCode;
+  private Boolean deliveryAddressIsDefault;
 
   public Funding toFundingEntity() {
     return Funding.builder()
