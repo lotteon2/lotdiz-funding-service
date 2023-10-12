@@ -10,18 +10,17 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class GetFundingDetailResponse {
+public class GetFundingDetailResponseDto {
   // TODO: project정보, member정보, delivery정보 필드 추가하기.
   private Long fundingId;
   private List<ProductFundingDto> productList;
 
-
-  public static GetFundingDetailResponse fromEntity(
+  public static GetFundingDetailResponseDto fromEntity(
       Funding funding, List<ProductFunding> productFundings) {
     List<ProductFundingDto> products =
         productFundings.stream().map(ProductFundingDto::fromEntity).collect(Collectors.toList());
 
-    return GetFundingDetailResponse.builder()
+    return GetFundingDetailResponseDto.builder()
         .fundingId(funding.getFundingId())
         .productList(products)
         .build();

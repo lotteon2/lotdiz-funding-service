@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CreateFundingRequest {
+public class CreateFundingRequestDto {
   private Long memberId;
   private Long projectId;
   private List<ProductFundingDto> products;

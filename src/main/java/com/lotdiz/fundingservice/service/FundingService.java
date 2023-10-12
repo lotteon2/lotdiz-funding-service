@@ -1,29 +1,31 @@
 package com.lotdiz.fundingservice.service;
 
 import com.lotdiz.fundingservice.dto.common.ProductFundingDto;
-import com.lotdiz.fundingservice.dto.request.CreateFundingRequest;
+import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.GetStockQuantityCheckExceedRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductStockCheckRequest;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
 import com.lotdiz.fundingservice.dto.request.UpdateProductStockQuantityRequestDto;
-import com.lotdiz.fundingservice.dto.response.GetFundingDetailResponse;
+import com.lotdiz.fundingservice.dto.response.GetFundingDetailResponseDto;
 import com.lotdiz.fundingservice.dto.response.GetStockQuantityCheckExceedResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
 import com.lotdiz.fundingservice.exception.FundingEntityNotFoundException;
+import com.lotdiz.fundingservice.exception.ProjectServiceOutOfServiceException;
 import com.lotdiz.fundingservice.repository.FundingRepository;
 import com.lotdiz.fundingservice.repository.ProductFundingRepository;
 import com.lotdiz.fundingservice.repository.SupporterWithUsRepository;
 import com.lotdiz.fundingservice.service.client.ProjectServiceClient;
 import com.lotdiz.fundingservice.service.manager.FundingProductManager;
-import com.lotdiz.fundingservice.utils.SuccessResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,36 +37,39 @@ public class FundingService {
   private final SupporterWithUsRepository supporterWithUsRepository;
   private final ProjectServiceClient projectServiceClient;
   private final FundingProductManager fundingProductManager;
+  private final CircuitBreakerFactory circuitBreakerFactory;
 
   /**
    * 펀딩하기
    *
-   * @param createFundingRequest
+   * @param createFundingRequestDto
    * @return fundingId(Long)
    */
   @Transactional
-  public Long createFunding(CreateFundingRequest createFundingRequest) {
+  public Long createFunding(CreateFundingRequestDto createFundingRequestDto) {
+    CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
-    Long projectId = createFundingRequest.getProjectId();
-    List<ProductFundingDto> productFundingDtoRequests = createFundingRequest.getProducts();
+    Long projectId = createFundingRequestDto.getProjectId();
+    List<ProductFundingDto> productFundingDtoRequests = createFundingRequestDto.getProducts();
     List<ProductStockCheckRequest> productStockCheckRequests =
         productFundingDtoRequests.stream()
             .map(
-                productFundingDto ->
-                    new ProductStockCheckRequest(
-                        productFundingDto.getProductId()))
+                productFundingDto -> new ProductStockCheckRequest(productFundingDto.getProductId()))
             .collect(Collectors.toList());
 
     GetStockQuantityCheckExceedRequestDto getStockQuantityCheckExceedRequestDto =
         new GetStockQuantityCheckExceedRequestDto(productStockCheckRequests);
 
-    // project-service에서 재고 확인
-    SuccessResponse<GetStockQuantityCheckExceedResponseDto> response =
-        projectServiceClient.getStockQuantityCheckExceed(
-            projectId, getStockQuantityCheckExceedRequestDto);
+    GetStockQuantityCheckExceedResponseDto response =
+        (GetStockQuantityCheckExceedResponseDto)
+            circuitBreaker.run(
+                () ->
+                    projectServiceClient.getStockQuantityCheckExceed(
+                        projectId, getStockQuantityCheckExceedRequestDto).getData(),
+                throwable -> new ProjectServiceOutOfServiceException());
 
     List<ProductStockCheckResponse> productStockCheckResponseList =
-        response.getData().getProductStockCheckResponses();
+              response.getProductStockCheckResponses();
 
     List<ProductStockUpdateRequest> productStockUpdateRequests = new ArrayList<>();
 
@@ -90,7 +95,7 @@ public class FundingService {
     }
 
     // (Funding) DTO->ENTITY
-    Funding funding = createFundingRequest.toFundingEntity();
+    Funding funding = createFundingRequestDto.toFundingEntity();
     Funding savedFunding = fundingRepository.save(funding);
 
     // (ProductFunding) DTO->ENTITY
@@ -101,28 +106,28 @@ public class FundingService {
     productFundingRepository.saveAll(productFundings);
 
     // (SupporterWithUs) DTO -> ENTITY
-    SupporterWithUs supporterWithUs = createFundingRequest.toSupporterWithUsEntity(savedFunding);
+    SupporterWithUs supporterWithUs = createFundingRequestDto.toSupporterWithUsEntity(savedFunding);
     supporterWithUsRepository.save(supporterWithUs);
 
     // TODO: 결제
 
-
     // project-service로 재고 update
     UpdateProductStockQuantityRequestDto updateProductStockQuantityRequestDto =
-            new UpdateProductStockQuantityRequestDto(productStockUpdateRequests);
+        new UpdateProductStockQuantityRequestDto(productStockUpdateRequests);
 
-    SuccessResponse successResponse =
-            projectServiceClient.updateStockQuantity(
-                    updateProductStockQuantityRequestDto);
+    circuitBreaker.run(
+        () ->
+            projectServiceClient.updateStockQuantity(updateProductStockQuantityRequestDto),
+        throwable -> new ProjectServiceOutOfServiceException());
 
     return savedFunding.getFundingId();
   }
 
-  public GetFundingDetailResponse getFundingDetailResponse(Long fundingId) {
+  public GetFundingDetailResponseDto getFundingDetailResponse(Long fundingId) {
     Funding findFunding =
         fundingRepository.findById(fundingId).orElseThrow(FundingEntityNotFoundException::new);
 
     List<ProductFunding> findProductFundings = productFundingRepository.findByFunding(findFunding);
-    return GetFundingDetailResponse.fromEntity(findFunding, findProductFundings);
+    return GetFundingDetailResponseDto.fromEntity(findFunding, findProductFundings);
   }
 }
