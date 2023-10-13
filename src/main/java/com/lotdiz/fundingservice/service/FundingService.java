@@ -82,21 +82,17 @@ public class FundingService {
       ProductFundingRequestDto productFundingRequestDto = productFundingRequestDtos.get(i);
       ProductStockCheckResponse productStockCheckResponse = productStockCheckResponseList.get(i);
 
-      try {
-        fundingProductManager.checkEnoughStockQuantity(
-            productFundingRequestDto.getProductFundingQuantity(),
-            productStockCheckResponse.getProductStockQuantity());
+      fundingProductManager.checkEnoughStockQuantity(
+          productFundingRequestDto.getProductFundingQuantity(),
+          productStockCheckResponse.getProductStockQuantity());
 
-        ProductStockUpdateRequest productStockUpdateRequest =
-            ProductStockUpdateRequest.builder()
-                .productId(productFundingRequestDto.getProductId())
-                .productFundingQuantity(productFundingRequestDto.getProductFundingQuantity())
-                .build();
+      ProductStockUpdateRequest productStockUpdateRequest =
+          ProductStockUpdateRequest.builder()
+              .productId(productFundingRequestDto.getProductId())
+              .productFundingQuantity(productFundingRequestDto.getProductFundingQuantity())
+              .build();
 
-        productStockUpdateRequests.add(productStockUpdateRequest);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+      productStockUpdateRequests.add(productStockUpdateRequest);
     }
 
     // (Funding) DTO->ENTITY
@@ -126,18 +122,8 @@ public class FundingService {
 
     // 배송 Kafka send
     CreateDeliveryRequestDto createDeliveryRequestDto =
-        CreateDeliveryRequestDto.builder()
-            .fundingId(savedFunding.getFundingId())
-            .deliveryRecipientName(createFundingRequestDto.getDeliveryAddressRecipientName())
-            .deliveryRecipientPhoneNumber(
-                createFundingRequestDto.getDeliveryAddressRecipientPhoneNumber())
-            .deliveryRecipientEmail(createFundingRequestDto.getDeliveryAddressRecipientEmail())
-            .deliveryRoadName(createFundingRequestDto.getDeliveryAddressRoadName())
-            .deliveryAddressDetail(createFundingRequestDto.getDeliveryAddressRequest())
-            .deliveryZipCode(createFundingRequestDto.getDeliveryAddressZipCode())
-            .deliveryRequest(createFundingRequestDto.getDeliveryAddressRequest())
-            .deliveryCost(createFundingRequestDto.getDeliveryCost())
-            .build();
+        CreateDeliveryRequestDto.toDto(savedFunding, createFundingRequestDto);
+
     deliveryProducer.sendCreateDelivery(createDeliveryRequestDto);
   }
 

@@ -1,5 +1,6 @@
 package com.lotdiz.fundingservice.dto.request;
 
+import com.lotdiz.fundingservice.entity.Funding;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,4 +21,19 @@ public class CreateDeliveryRequestDto {
   private String deliveryZipCode;
   private String deliveryRequest;
   private Long deliveryCost;
+
+  public static CreateDeliveryRequestDto toDto(Funding savedFunding, CreateFundingRequestDto createFundingRequestDto){
+      CreateDeliveryRequestDto.builder()
+              .fundingId(savedFunding.getFundingId())
+            .deliveryRecipientName(createFundingRequestDto.getDeliveryAddressRecipientName())
+            .deliveryRecipientPhoneNumber(
+                    createFundingRequestDto.getDeliveryAddressRecipientPhoneNumber())
+            .deliveryRecipientEmail(createFundingRequestDto.getDeliveryAddressRecipientEmail())
+            .deliveryRoadName(createFundingRequestDto.getDeliveryAddressRoadName())
+            .deliveryAddressDetail(createFundingRequestDto.getDeliveryAddressRequest())
+            .deliveryZipCode(createFundingRequestDto.getDeliveryAddressZipCode())
+            .deliveryRequest(createFundingRequestDto.getDeliveryAddressRequest())
+            .deliveryCost(createFundingRequestDto.getDeliveryCost())
+            .build();
+  }
 }

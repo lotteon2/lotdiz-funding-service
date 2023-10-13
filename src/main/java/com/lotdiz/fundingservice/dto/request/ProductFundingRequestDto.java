@@ -12,20 +12,13 @@ public class ProductFundingRequestDto {
   private Long productFundingPrice;
   private Long productFundingQuantity;
 
+  // ProductFunding Entity에 저장
   public ProductFunding toEntity(Funding funding) {
     return ProductFunding.builder()
         .funding(funding)
         .productId(productId)
         .productFundingPrice(productFundingPrice)
         .productFundingQuantity(productFundingQuantity)
-        .build();
-  }
-
-  public static ProductFundingRequestDto fromEntity(ProductFunding productFunding) {
-    return ProductFundingRequestDto.builder()
-        .productId(productFunding.getProductId())
-        .productFundingPrice(productFunding.getProductFundingPrice())
-        .productFundingQuantity(productFunding.getProductFundingQuantity())
         .build();
   }
 }
