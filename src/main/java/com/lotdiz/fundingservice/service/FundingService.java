@@ -2,11 +2,8 @@ package com.lotdiz.fundingservice.service;
 
 import com.lotdiz.fundingservice.dto.request.CreateDeliveryRequestDto;
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
-import com.lotdiz.fundingservice.dto.request.GetStockQuantityCheckExceedRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductFundingRequestDto;
-import com.lotdiz.fundingservice.dto.request.ProductStockCheckRequest;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
-import com.lotdiz.fundingservice.dto.request.UpdateProductStockQuantityRequestDto;
 import com.lotdiz.fundingservice.dto.response.GetStockQuantityCheckExceedResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.entity.Funding;
@@ -50,31 +47,25 @@ public class FundingService {
   public void createFunding(CreateFundingRequestDto createFundingRequestDto) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
-    Long projectId = createFundingRequestDto.getProjectId();
     List<ProductFundingRequestDto> productFundingRequestDtos =
         createFundingRequestDto.getProducts();
-    List<ProductStockCheckRequest> productStockCheckRequests =
+    List<Long> productIds =
         productFundingRequestDtos.stream()
-            .map(
-                productFundingRequestDto ->
-                    new ProductStockCheckRequest(productFundingRequestDto.getProductId()))
+            .map(ProductFundingRequestDto::getProductId)
             .collect(Collectors.toList());
 
-    GetStockQuantityCheckExceedRequestDto getStockQuantityCheckExceedRequestDto =
-        new GetStockQuantityCheckExceedRequestDto(productStockCheckRequests);
-
-    GetStockQuantityCheckExceedResponseDto response =
-        (GetStockQuantityCheckExceedResponseDto)
+    List<ProductStockCheckResponse> productStockCheckResponseList=
+        (List<ProductStockCheckResponse>)
             circuitBreaker.run(
                 () ->
                     projectServiceClient
                         .getStockQuantityCheckExceed(
-                            projectId, getStockQuantityCheckExceedRequestDto)
+                                productIds)
                         .getData(),
                 throwable -> new ProjectServiceOutOfServiceException());
 
-    List<ProductStockCheckResponse> productStockCheckResponseList =
-        response.getProductStockCheckResponses();
+//    List<ProductStockCheckResponse> productStockCheckResponseList =
+//        response.getProductStockCheckResponses();
 
     List<ProductStockUpdateRequest> productStockUpdateRequests = new ArrayList<>();
 
@@ -113,11 +104,8 @@ public class FundingService {
     // TODO: 결제
 
     // project-service로 재고 update
-    UpdateProductStockQuantityRequestDto updateProductStockQuantityRequestDto =
-        new UpdateProductStockQuantityRequestDto(productStockUpdateRequests);
-
     circuitBreaker.run(
-        () -> projectServiceClient.updateStockQuantity(updateProductStockQuantityRequestDto),
+        () -> projectServiceClient.updateStockQuantity(productStockUpdateRequests),
         throwable -> new ProjectServiceOutOfServiceException());
 
     // 배송 Kafka send

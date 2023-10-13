@@ -23,7 +23,7 @@ public class CreateDeliveryRequestDto {
   private Long deliveryCost;
 
   public static CreateDeliveryRequestDto toDto(Funding savedFunding, CreateFundingRequestDto createFundingRequestDto){
-      CreateDeliveryRequestDto.builder()
+    CreateDeliveryRequestDto createDeliveryRequestDto = CreateDeliveryRequestDto.builder()
               .fundingId(savedFunding.getFundingId())
             .deliveryRecipientName(createFundingRequestDto.getDeliveryAddressRecipientName())
             .deliveryRecipientPhoneNumber(
@@ -35,5 +35,6 @@ public class CreateDeliveryRequestDto {
             .deliveryRequest(createFundingRequestDto.getDeliveryAddressRequest())
             .deliveryCost(createFundingRequestDto.getDeliveryCost())
             .build();
+      return createDeliveryRequestDto;
   }
 }
