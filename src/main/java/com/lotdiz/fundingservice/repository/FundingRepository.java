@@ -15,4 +15,5 @@ public interface FundingRepository extends JpaRepository<Funding, Long> {
   List<Funding> findAllByProjectIdIsIn(@Param("projectIds") List<Long> projectIds);
   Page<Funding> findByMemberId(Long memberId, Pageable pageable);
   List<Funding> findByProjectId(Long projectId);
+  Funding findByFundingId(Long fundingId);
 }

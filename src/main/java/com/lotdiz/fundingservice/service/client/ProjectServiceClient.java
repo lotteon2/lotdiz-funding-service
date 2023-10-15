@@ -1,8 +1,10 @@
 package com.lotdiz.fundingservice.service.client;
 
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
+import com.lotdiz.fundingservice.dto.request.ProjectAndProductInfoRequestDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.dto.response.ProjectAndMakerInfoResponseDto;
+import com.lotdiz.fundingservice.dto.response.ProjectAndProductInfoResponseDto;
 import com.lotdiz.fundingservice.utils.SuccessResponse;
 import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -29,4 +31,7 @@ public interface ProjectServiceClient {
   SuccessResponse<List<ProjectAndMakerInfoResponseDto>> getProjectAndMakerInfo(
       @RequestParam List<Long> projectIds);
 
+  @PostMapping("/projects/get-project-product-info")
+  SuccessResponse<ProjectAndProductInfoResponseDto> getProjectAndProductInfo(
+      @RequestParam ProjectAndProductInfoRequestDto projectAndProductInfoRequestDtos);
 }
