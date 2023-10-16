@@ -2,17 +2,20 @@ package com.lotdiz.fundingservice.service;
 
 import com.lotdiz.fundingservice.dto.request.CreateDeliveryRequestDto;
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
+import com.lotdiz.fundingservice.dto.request.MemberPointUpdateRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
+import com.lotdiz.fundingservice.exception.MemberServiceClientOutOfServiceException;
 import com.lotdiz.fundingservice.exception.ProjectServiceOutOfServiceException;
 import com.lotdiz.fundingservice.messagequeue.kafka.DeliveryProducer;
 import com.lotdiz.fundingservice.repository.FundingRepository;
 import com.lotdiz.fundingservice.repository.ProductFundingRepository;
 import com.lotdiz.fundingservice.repository.SupporterWithUsRepository;
+import com.lotdiz.fundingservice.service.client.MemberServiceClient;
 import com.lotdiz.fundingservice.service.client.ProjectServiceClient;
 import com.lotdiz.fundingservice.service.manager.FundingProductManager;
 import java.util.ArrayList;
@@ -32,6 +35,7 @@ public class FundingService {
   private final ProductFundingRepository productFundingRepository;
   private final SupporterWithUsRepository supporterWithUsRepository;
   private final ProjectServiceClient projectServiceClient;
+  private final MemberServiceClient memberServiceClient;
   private final FundingProductManager fundingProductManager;
   private final CircuitBreakerFactory circuitBreakerFactory;
   private final DeliveryProducer deliveryProducer;
@@ -53,18 +57,11 @@ public class FundingService {
             .map(ProductFundingRequestDto::getProductId)
             .collect(Collectors.toList());
 
-    List<ProductStockCheckResponse> productStockCheckResponseList=
+    List<ProductStockCheckResponse> productStockCheckResponseList =
         (List<ProductStockCheckResponse>)
             circuitBreaker.run(
-                () ->
-                    projectServiceClient
-                        .getStockQuantityCheckExceed(
-                                productIds)
-                        .getData(),
+                () -> projectServiceClient.getStockQuantityCheckExceed(productIds).getData(),
                 throwable -> new ProjectServiceOutOfServiceException());
-
-//    List<ProductStockCheckResponse> productStockCheckResponseList =
-//        response.getProductStockCheckResponses();
 
     List<ProductStockUpdateRequest> productStockUpdateRequests = new ArrayList<>();
 
@@ -106,6 +103,16 @@ public class FundingService {
     circuitBreaker.run(
         () -> projectServiceClient.updateStockQuantity(productStockUpdateRequests),
         throwable -> new ProjectServiceOutOfServiceException());
+
+    // 포인트 차감
+    MemberPointUpdateRequestDto memberPointUpdateRequestDto =
+        MemberPointUpdateRequestDto.builder()
+            .memberId(createFundingRequestDto.getMemberId())
+            .memberPoint(createFundingRequestDto.getFundingUsedPoint())
+            .build();
+    circuitBreaker.run(
+        () -> memberServiceClient.usePoint(memberPointUpdateRequestDto),
+        throwable -> new MemberServiceClientOutOfServiceException());
 
     // 배송 Kafka send
     CreateDeliveryRequestDto createDeliveryRequestDto =
