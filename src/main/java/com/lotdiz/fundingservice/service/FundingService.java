@@ -1,6 +1,7 @@
 package com.lotdiz.fundingservice.service;
 
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
+import com.lotdiz.fundingservice.dto.request.MemberPointUpdateRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
 import com.lotdiz.fundingservice.dto.request.ProjectAndProductInfoRequestDto;
@@ -10,9 +11,11 @@ import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.dto.response.ProjectAndMakerInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProjectAndProductInfoResponseDto;
 import com.lotdiz.fundingservice.entity.Funding;
+import com.lotdiz.fundingservice.entity.FundingStatus;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
 import com.lotdiz.fundingservice.exception.DeliveryStatusNotFoundException;
+import com.lotdiz.fundingservice.exception.MemberServiceOutOfServiceException;
 import com.lotdiz.fundingservice.exception.PaymentInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.ProjectAndMakerInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.ProjectAndProductInfoNotFoundException;
@@ -22,6 +25,7 @@ import com.lotdiz.fundingservice.repository.FundingRepository;
 import com.lotdiz.fundingservice.repository.ProductFundingRepository;
 import com.lotdiz.fundingservice.repository.SupporterWithUsRepository;
 import com.lotdiz.fundingservice.service.client.DeliveryServiceClient;
+import com.lotdiz.fundingservice.service.client.MemberServiceClient;
 import com.lotdiz.fundingservice.service.client.PaymentServiceClient;
 import com.lotdiz.fundingservice.service.client.ProjectServiceClient;
 import com.lotdiz.fundingservice.service.manager.FundingProductManager;
@@ -46,6 +50,7 @@ public class FundingService {
   private final ProjectServiceClient projectServiceClient;
   private final PaymentServiceClient paymentServiceClient;
   private final DeliveryServiceClient deliveryServiceClient;
+  private final MemberServiceClient memberServiceClient;
   private final FundingProductManager fundingProductManager;
   private final CircuitBreakerFactory circuitBreakerFactory;
   private final DeliveryProducer deliveryProducer;
@@ -184,14 +189,15 @@ public class FundingService {
       Long projectParticipantCount = (long) findFundingsByProjectId.size();
       fundingInfoResponseDto.setProjectParticipantCount(projectParticipantCount);
 
-      Long totalAccumulatedFundingSupportAmount =
+      Long totalAccumulatedFundingAndSupportAmount =
           findFundingsByProjectId.stream()
               .mapToLong(
                   funding -> funding.getFundingTotalAmount() + funding.getFundingSupportAmount())
               .sum();
-      fundingInfoResponseDto.setTotalAccumulatedFundingAmount(totalAccumulatedFundingSupportAmount);
+      fundingInfoResponseDto.setTotalAccumulatedFundingAmount(
+          totalAccumulatedFundingAndSupportAmount);
       fundingInfoResponseDto.setFundingAchievementRate(
-          (totalAccumulatedFundingSupportAmount * 100 / projectInfo.getProjectTargetAmount()));
+          (totalAccumulatedFundingAndSupportAmount * 100 / projectInfo.getProjectTargetAmount()));
       fundingInfoResponseDto.setRemainingDays(projectInfo.getRemainingDays());
       // 결제 관련 정보 추가
       PaymentInfoResponseDto paymentInfo = paymentInfoResponseDtos.get(i);
@@ -241,5 +247,43 @@ public class FundingService {
                 throwable -> new ProjectAndProductInfoNotFoundException());
 
     return projectAndProductInfoResponseDtos;
+  }
+
+  @Transactional
+  public void cancelFunding(Long fundingId) {
+    CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
+
+    // 펀딩 정보 찾기
+    Funding funding = fundingRepository.findByFundingId(fundingId);
+
+    // 롯딜할인금액이 있다는 뜻은 롯딜이므로 환불이 불가능함
+    fundingProductManager.checkIfRefundable(funding.getFundingLotdealDiscountAmount() > 0);
+
+    // project-service로 재고 증가 요청
+    List<ProductFunding> productFundings = productFundingRepository.findByFunding(funding);
+    List<ProductStockUpdateRequest> productStockUpdateRequests =
+        productFundings.stream()
+            .map(
+                pf ->
+                    ProductStockUpdateRequest.builder()
+                        .productId(pf.getProductId())
+                        .productFundingQuantity(-pf.getProductFundingQuantity())
+                        .build())
+            .collect(Collectors.toList());
+    projectServiceClient.updateStockQuantity(productStockUpdateRequests);
+
+    // 펀딩상태 변경
+    funding.setFundingStatus(FundingStatus.CANCELED);
+    Funding updatedFunding = fundingRepository.save(funding);
+
+    // TODO: payment-service로 결제 취소 요청
+
+    // 사용한 포인트 변경
+    MemberPointUpdateRequestDto memberPointUpdateRequestDto = MemberPointUpdateRequestDto.builder()
+            .memberId(funding.getMemberId())
+            .memberPoint(funding.getFundingUsedPoint())
+            .build();
+    circuitBreaker.run(()->memberServiceClient.udpateMemberPoint(memberPointUpdateRequestDto), throwable -> new MemberServiceOutOfServiceException());
+
   }
 }

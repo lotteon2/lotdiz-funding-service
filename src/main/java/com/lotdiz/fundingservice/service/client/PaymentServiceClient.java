@@ -14,4 +14,5 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface PaymentServiceClient {
   @PostMapping("/payments/get-payment-info/")
   SuccessResponse<List<PaymentInfoResponseDto>> getPaymentInfo(@RequestBody List<Long> fundingIds);
+
 }
