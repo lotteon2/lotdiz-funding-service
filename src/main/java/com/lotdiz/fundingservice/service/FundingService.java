@@ -9,6 +9,7 @@ import com.lotdiz.fundingservice.dto.response.PaymentInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.dto.response.ProjectAndMakerInfoResponseDto;
 import com.lotdiz.fundingservice.entity.Funding;
+import com.lotdiz.fundingservice.entity.FundingStatus;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
 import com.lotdiz.fundingservice.exception.DeliveryStatusNotFoundException;
@@ -177,7 +178,8 @@ public class FundingService {
       Long projectParticipantCount = (long)findFundingsByProjectId.size();
       fundingInfoResponseDto.setProjectParticipantCount(projectParticipantCount);
 
-      Long totalAccumulatedFundingSupportAmount = findFundingsByProjectId.stream()
+      long totalAccumulatedFundingSupportAmount = findFundingsByProjectId.stream()
+              .filter(funding -> funding.getFundingStatus() == FundingStatus.COMPLETED)
               .mapToLong(funding -> funding.getFundingTotalAmount() + funding.getFundingSupportAmount())
               .sum();
       fundingInfoResponseDto.setTotalAccumulatedFundingAmount(totalAccumulatedFundingSupportAmount);
