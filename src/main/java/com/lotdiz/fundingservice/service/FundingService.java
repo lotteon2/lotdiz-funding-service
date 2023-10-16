@@ -121,6 +121,7 @@ public class FundingService {
     //    deliveryProducer.sendCreateDelivery(createDeliveryRequestDto);
   }
 
+  @Transactional
   public List<FundingInfoResponseDto> getFundingInfoListResponse(
       Long memberId, PageRequest pageRequest) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
@@ -213,6 +214,7 @@ public class FundingService {
    * @param fundingId
    * @return projectAndProductInfoResponseDtos (List<ProjectAndProductInfoResponseDto>)
    */
+  @Transactional
   public ProjectAndProductInfoResponseDto getFundingDetailsResponse(Long fundingId) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
