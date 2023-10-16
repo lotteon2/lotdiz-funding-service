@@ -4,7 +4,6 @@ import com.lotdiz.fundingservice.dto.request.CreateDeliveryRequestDto;
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
-import com.lotdiz.fundingservice.dto.response.GetStockQuantityCheckExceedResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.ProductFunding;
@@ -75,7 +74,7 @@ public class FundingService {
 
       fundingProductManager.checkEnoughStockQuantity(
           productFundingRequestDto.getProductFundingQuantity(),
-          productStockCheckResponse.getProductStockQuantity());
+          productStockCheckResponse.getProductCurrentStockQuantity());
 
       ProductStockUpdateRequest productStockUpdateRequest =
           ProductStockUpdateRequest.builder()

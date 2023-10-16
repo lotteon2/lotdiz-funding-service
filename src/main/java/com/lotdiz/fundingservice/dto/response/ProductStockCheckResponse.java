@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProductStockCheckResponse {
   private Long productId;
-  private Long productStockQuantity;
+  private Long productCurrentStockQuantity;
 }

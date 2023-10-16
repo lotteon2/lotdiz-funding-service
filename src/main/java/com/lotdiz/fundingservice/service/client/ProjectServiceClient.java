@@ -1,7 +1,6 @@
 package com.lotdiz.fundingservice.service.client;
 
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
-import com.lotdiz.fundingservice.dto.response.GetStockQuantityCheckExceedResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.utils.SuccessResponse;
 import java.util.List;
