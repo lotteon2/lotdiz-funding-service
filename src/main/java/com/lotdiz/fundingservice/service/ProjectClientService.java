@@ -1,13 +1,17 @@
 package com.lotdiz.fundingservice.service;
 
+import com.lotdiz.fundingservice.dto.TargetAmountAchievedDto;
 import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDto;
+import com.lotdiz.fundingservice.dto.request.ProjectInformationForAchievedTargetAmountRequestDto;
 import com.lotdiz.fundingservice.dto.response.GetTargetAmountCheckExceedResponseDto;
+import com.lotdiz.fundingservice.dto.response.TargetAmountAchievedResponseDto;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.repository.FundingRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProjectClientService {
 
   private final FundingRepository fundingRepository;
+
+  @Qualifier("fundingQueryRepositoryImpl")
+  private final FundingRepository fundingQueryRepository;
 
   public List<GetTargetAmountCheckExceedResponseDto> getTargetAmountCheckExceed(
       List<GetTargetAmountCheckExceedRequestDto> getTargetAmountCheckExceedRequestDtos) {
@@ -46,5 +53,32 @@ public class ProjectClientService {
                   .build();
             })
         .collect(Collectors.toList());
+  }
+
+  public TargetAmountAchievedResponseDto getTargetAmountAchieved(
+      List<ProjectInformationForAchievedTargetAmountRequestDto> projectInfo) {
+
+    Map<Long, Long> fundingTotalAmount = fundingQueryRepository.findFundingTotalAmount();
+
+    List<Long> projectIds =
+        projectInfo.stream()
+            .filter(
+                item -> item.getProjectTargetAmount() < fundingTotalAmount.get(item.getProjectId()))
+            .map(ProjectInformationForAchievedTargetAmountRequestDto::getProjectId)
+            .collect(Collectors.toList());
+
+    Map<Long, List<Long>> fundingMemberId = fundingQueryRepository.findFundingMemberId(projectIds);
+    List<TargetAmountAchievedDto> targetAmountAchievedDtos =
+        projectInfo.stream()
+            .map(
+                item ->
+                    TargetAmountAchievedDto.builder()
+                        .projectName(item.getProjectName())
+                        .memberIds(fundingMemberId.get(item.getProjectId()))
+                        .build())
+            .collect(Collectors.toList());
+    return TargetAmountAchievedResponseDto.builder()
+        .targetAmountAchievedDtos(targetAmountAchievedDtos)
+        .build();
   }
 }

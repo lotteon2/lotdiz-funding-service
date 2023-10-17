@@ -1,0 +1,37 @@
+package com.lotdiz.fundingservice.repository;
+
+import static com.lotdiz.fundingservice.entity.QFunding.funding;
+import static com.querydsl.core.group.GroupBy.groupBy;
+import static com.querydsl.core.group.GroupBy.list;
+import static com.querydsl.core.group.GroupBy.sum;
+
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.List;
+import java.util.Map;
+import javax.persistence.EntityManager;
+import org.springframework.context.annotation.Primary;
+
+@Primary
+public class FundingQueryRepositoryImpl implements FundingQueryRepository {
+  private final JPAQueryFactory jpaQueryFactory;
+
+  public FundingQueryRepositoryImpl(EntityManager em) {
+    this.jpaQueryFactory = new JPAQueryFactory(em);
+  }
+
+  @Override
+  public Map<Long, List<Long>> findFundingMemberId(List<Long> projectIds) {
+    //
+    return jpaQueryFactory
+        .from(funding)
+        .where(funding.projectId.in(projectIds))
+        .transform(groupBy(funding.projectId).as(list(funding.memberId)));
+  }
+
+  @Override
+  public Map<Long, Long> findFundingTotalAmount() {
+    return jpaQueryFactory
+        .from(funding)
+        .transform(groupBy(funding.projectId).as(sum(funding.fundingTotalAmount)));
+  }
+}
