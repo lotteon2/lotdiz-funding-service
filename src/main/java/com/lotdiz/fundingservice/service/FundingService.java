@@ -29,17 +29,20 @@ import com.lotdiz.fundingservice.service.client.MemberServiceClient;
 import com.lotdiz.fundingservice.service.client.PaymentServiceClient;
 import com.lotdiz.fundingservice.service.client.ProjectServiceClient;
 import com.lotdiz.fundingservice.service.manager.FundingProductManager;
+import com.lotdiz.fundingservice.utils.SuccessResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -249,7 +252,11 @@ public class FundingService {
     return projectAndProductInfoResponseDtos;
   }
 
-  @Transactional
+/**
+ * 펀딩 취소
+ * @param fundingId
+ */
+@Transactional
   public void cancelFunding(Long fundingId) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
@@ -278,12 +285,13 @@ public class FundingService {
 
     // TODO: payment-service로 결제 취소 요청
 
-    // 사용한 포인트 변경
+    // 포인트 반환
     MemberPointUpdateRequestDto memberPointUpdateRequestDto = MemberPointUpdateRequestDto.builder()
             .memberId(funding.getMemberId())
             .memberPoint(funding.getFundingUsedPoint())
             .build();
-    circuitBreaker.run(()->memberServiceClient.udpateMemberPoint(memberPointUpdateRequestDto), throwable -> new MemberServiceOutOfServiceException());
 
+    SuccessResponse successResponse = (SuccessResponse) circuitBreaker.run(()->memberServiceClient.udpateMemberPoint(memberPointUpdateRequestDto), throwable -> new MemberServiceOutOfServiceException());
+    log.info(successResponse.getDetail());
   }
 }

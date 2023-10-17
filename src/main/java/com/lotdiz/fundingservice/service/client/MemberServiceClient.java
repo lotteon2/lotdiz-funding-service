@@ -8,6 +8,8 @@ import java.util.Map;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 // @FeignClient(name="memberServiceClient", url="${endpoint.member-service}")
@@ -19,7 +21,7 @@ public interface MemberServiceClient {
   SuccessResponse<Map<String, MemberInfoResponseDto>> getMemberInfo(
       @RequestParam List<Long> memberIds);
 
-  @PostMapping("/members/update-point")
+  @PutMapping("/members/update-point")
   SuccessResponse udpateMemberPoint(
-      @RequestParam MemberPointUpdateRequestDto updateMemberPoint);
+      @RequestBody MemberPointUpdateRequestDto updateMemberPoint);
 }
