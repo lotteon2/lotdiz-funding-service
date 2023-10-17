@@ -4,6 +4,7 @@ import com.lotdiz.fundingservice.dto.request.CreateDeliveryRequestDto;
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
+import com.lotdiz.fundingservice.dto.response.FundingAndTotalPageResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.PaymentInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
@@ -124,12 +125,15 @@ public class FundingService {
 //    deliveryProducer.sendCreateDelivery(createDeliveryRequestDto);
   }
 
-  public List<FundingInfoResponseDto> getFundingInfoListResponse(Long memberId, PageRequest pageRequest) {
+  public FundingAndTotalPageResponseDto getFundingInfoListResponse(Long memberId, PageRequest pageRequest) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
     // 펀딩 목록. (PageRequest로 페이징 처리)
     Page<Funding> fundingsPerPage = fundingRepository.findByMemberId(memberId, pageRequest);
     List<Funding> fundingsByMember = fundingsPerPage.getContent();
+
+    // 총 페이지 수
+    Long totalPage = (long)fundingsPerPage.getTotalPages();
 
     // 프로젝트Ids (회원이 참여한 프로젝트Id목록)
     List<Long> projectIds = new ArrayList<>(fundingsByMember.stream()
@@ -197,6 +201,12 @@ public class FundingService {
       // LIST에 모두 담기
       fundingInfoResponseDtos.add(fundingInfoResponseDto);
     }
-    return fundingInfoResponseDtos;
+
+    FundingAndTotalPageResponseDto responseDto = FundingAndTotalPageResponseDto.builder()
+            .totalPage(totalPage)
+            .fundingInfoResponseDtos(fundingInfoResponseDtos)
+            .build();
+
+    return responseDto;
   }
 }

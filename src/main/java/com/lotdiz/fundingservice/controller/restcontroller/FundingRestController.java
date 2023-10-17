@@ -1,6 +1,7 @@
 package com.lotdiz.fundingservice.controller.restcontroller;
 
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
+import com.lotdiz.fundingservice.dto.response.FundingAndTotalPageResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingInfoResponseDto;
 import com.lotdiz.fundingservice.service.FundingService;
 import com.lotdiz.fundingservice.utils.SuccessResponse;
@@ -41,25 +42,25 @@ public class FundingRestController {
   }
 
   @GetMapping("/fundings")
-  public ResponseEntity<SuccessResponse<Map<String, List<FundingInfoResponseDto>>>>
+  public ResponseEntity<SuccessResponse<Map<String, FundingAndTotalPageResponseDto>>>
       getFundingsByMember(
           @RequestHeader(required = false) Long memberId,
           @RequestParam(defaultValue = "0") int page,
-          @RequestParam(defaultValue = "10") int size,
+          @RequestParam(defaultValue = "5") int size,
           @RequestParam(defaultValue = "createdAt") String sort) {
 
     PageRequest pageRequest = PageRequest.of(page, size, Sort.by(sort).descending());
 
-    List<FundingInfoResponseDto> fundingInfoListResponse =
+    FundingAndTotalPageResponseDto responseDto =
         fundingService.getFundingInfoListResponse(memberId, pageRequest);
 
     return ResponseEntity.ok()
         .body(
-            SuccessResponse.<Map<String, List<FundingInfoResponseDto>>>builder()
+            SuccessResponse.<Map<String, FundingAndTotalPageResponseDto>>builder()
                 .code(String.valueOf(HttpStatus.OK.value()))
                 .message(HttpStatus.OK.name())
                 .detail("펀딩 내역 조회 성공")
-                .data(Map.of("fundingList", fundingInfoListResponse))
+                .data(Map.of("fundingList", responseDto))
                 .build());
   }
 }
