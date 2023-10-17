@@ -7,10 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-// @FeignClient(name="memberServiceClient", url="${endpoint.member-service}")
-@FeignClient(
-    name = "memberServiceClient",
-    url = "https://952a1112-3483-413d-90a6-6befa9974329.mock.pstmn.io")
+@FeignClient(name="memberServiceClient", url="${endpoint.member-service}")
 public interface MemberServiceClient {
   @PostMapping("/members/use-point")
   SuccessResponse usePoint(@RequestBody MemberPointUpdateRequestDto memberPointUpdateRequestDto);
