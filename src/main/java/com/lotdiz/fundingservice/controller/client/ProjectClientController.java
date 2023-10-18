@@ -68,14 +68,4 @@ public class ProjectClientController {
                 .data(projectClientService.getRegisteredProjectList(projectAmountWithIdRequestDto))
                 .build());
   }
-
-  @GetMapping("/projects/{projectId}/achievement")
-  public ResponseEntity<SuccessResponse> getProjectAchievement(@PathVariable String projectId) {
-    return ResponseEntity.ok().body(SuccessResponse.builder().build());
-  }
-
-  @GetMapping("/fundings/{projectId}/registered-project-detail")
-  public ResponseEntity<SuccessResponse> getRegisteredProject(@PathVariable String projectId) {
-    return ResponseEntity.ok().body(SuccessResponse.builder().build());
-  }
 }
