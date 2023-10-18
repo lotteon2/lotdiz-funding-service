@@ -291,7 +291,7 @@ public class FundingService {
             .memberPoint(funding.getFundingUsedPoint())
             .build();
 
-    SuccessResponse successResponse = (SuccessResponse) circuitBreaker.run(()->memberServiceClient.updateMemberPoint(memberPointUpdateRequestDto), throwable -> new MemberServiceOutOfServiceException());
+    SuccessResponse successResponse = (SuccessResponse) circuitBreaker.run(()->memberServiceClient.refundMemberPoint(memberPointUpdateRequestDto), throwable -> new MemberServiceOutOfServiceException());
     log.info(successResponse.getDetail());
   }
 }

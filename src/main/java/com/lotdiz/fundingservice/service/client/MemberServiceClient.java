@@ -20,7 +20,7 @@ public interface MemberServiceClient {
   SuccessResponse<Map<String, MemberInfoResponseDto>> getMemberInfo(
       @RequestParam List<Long> memberIds);
 
-  @PutMapping("/members/update-point")
-  SuccessResponse updateMemberPoint(
+  @PutMapping("/members/point/refund")
+  SuccessResponse refundMemberPoint(
       @RequestBody MemberPointUpdateRequestDto updateMemberPoint);
 }
