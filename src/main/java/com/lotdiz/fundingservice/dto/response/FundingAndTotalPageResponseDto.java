@@ -14,6 +14,6 @@ import lombok.Setter;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FundingAndTotalPageResponseDto {
-    private Long totalPage;
+    private Long totalPages;
     private List<FundingInfoResponseDto> fundingInfoResponseDtos;
 }

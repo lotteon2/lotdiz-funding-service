@@ -1,6 +1,5 @@
 package com.lotdiz.fundingservice.service;
 
-import com.lotdiz.fundingservice.dto.request.CreateDeliveryRequestDto;
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
@@ -33,7 +32,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -134,7 +132,7 @@ public class FundingService {
     List<Funding> fundingsByMember = fundingsPerPage.getContent();
 
     // 총 페이지 수
-    Long totalPage = (long)fundingsPerPage.getTotalPages();
+    Long totalPages = (long)fundingsPerPage.getTotalPages();
 
     // 프로젝트Ids (회원이 참여한 프로젝트Id목록)
     List<Long> projectIds = new ArrayList<>(fundingsByMember.stream()
@@ -204,7 +202,7 @@ public class FundingService {
     }
 
     FundingAndTotalPageResponseDto responseDto = FundingAndTotalPageResponseDto.builder()
-            .totalPage(totalPage)
+            .totalPages(totalPages)
             .fundingInfoResponseDtos(fundingInfoResponseDtos)
             .build();
 
