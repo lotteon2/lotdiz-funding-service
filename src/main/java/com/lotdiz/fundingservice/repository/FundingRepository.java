@@ -2,6 +2,7 @@ package com.lotdiz.fundingservice.repository;
 
 import com.lotdiz.fundingservice.entity.Funding;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,5 +16,5 @@ public interface FundingRepository extends JpaRepository<Funding, Long> {
   List<Funding> findAllByProjectIdIsIn(@Param("projectIds") List<Long> projectIds);
   Page<Funding> findByMemberId(Long memberId, Pageable pageable);
   List<Funding> findByProjectId(Long projectId);
-  Funding findByFundingId(Long fundingId);
+  Optional<Funding> findByFundingId(Long fundingId);
 }

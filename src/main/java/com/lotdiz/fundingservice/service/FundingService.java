@@ -13,6 +13,7 @@ import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
 import com.lotdiz.fundingservice.exception.DeliveryStatusNotFoundException;
+import com.lotdiz.fundingservice.exception.FundingEntityNotFoundException;
 import com.lotdiz.fundingservice.exception.PaymentInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.ProjectAndMakerInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.ProjectAndProductInfoNotFoundException;
@@ -217,7 +218,9 @@ public class FundingService {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
     // 프로젝트 id 찾기
-    Funding funding = fundingRepository.findByFundingId(fundingId);
+    Funding funding = fundingRepository.findByFundingId(fundingId).orElseThrow(
+            FundingEntityNotFoundException::new);
+
     Long projectId = funding.getProjectId();
 
     // 상품 ids 찾기
