@@ -8,6 +8,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(name="memberServiceClient", url="${endpoint.member-service}")
 public interface MemberServiceClient {
-  @PutMapping("/members/use-point")
+  @PutMapping("/members/point")
   SuccessResponse usePoint(@RequestBody MemberPointUpdateRequestDto memberPointUpdateRequestDto);
 }
