@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ProjectClientService {
-
   private final FundingRepository fundingRepository;
 
   public List<GetTargetAmountCheckExceedResponseDto> getTargetAmountCheckExceed(
