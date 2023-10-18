@@ -38,10 +38,14 @@ public class SupportWithUsService {
 public SupportWithUsResponseDto getSupportWithUsInfo(Long projectId, Pageable pageable){
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
-    List<Funding> fundingList = fundingRepository.findByProjectId(projectId, pageable).toList();
+    Page<Funding> fundingPerPage = fundingRepository.findByProjectId(projectId, pageable);
+    List<Funding> fundingList = fundingPerPage.toList();
+
     List<Long> fundingIds = fundingList.stream().map(Funding::getFundingId).collect(Collectors.toList());
 
     Long count = fundingRepository.countFundingByProjectId(projectId);
+
+    Long totalPages = (long) fundingPerPage.getTotalPages();
 
     List<Long> memberIds = fundingList.stream().map(Funding::getMemberId).collect(Collectors.toList());
 
@@ -90,6 +94,7 @@ public SupportWithUsResponseDto getSupportWithUsInfo(Long projectId, Pageable pa
     }
 
     return SupportWithUsResponseDto.builder()
+            .totalPages(totalPages)
             .count(count)
             .supporterInfoResponseDtos(supporterInfoResponseDtos)
             .build();
