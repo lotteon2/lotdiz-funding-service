@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,15 +47,12 @@ public class FundingRestController {
   @GetMapping("/fundings")
   public ResponseEntity<SuccessResponse<Map<String, FundingAndTotalPageResponseDto>>>
       getFundingsByMember(
-          @RequestHeader(required = false) Long memberId,
-          @RequestParam(defaultValue = "0") int page,
-          @RequestParam(defaultValue = "5") int size,
-          @RequestParam(defaultValue = "createdAt") String sort) {
-
-    PageRequest pageRequest = PageRequest.of(page, size, Sort.by(sort).descending());
+          @RequestHeader(required = true) Long memberId,
+          @PageableDefault(page = 0, size = 5, sort = "createdAt", direction = Direction.DESC)
+              Pageable pageable) {
 
     FundingAndTotalPageResponseDto responseDto =
-        fundingService.getFundingInfoListResponse(memberId, pageRequest);
+        fundingService.getFundingInfoListResponse(memberId, pageable);
 
     return ResponseEntity.ok()
         .body(

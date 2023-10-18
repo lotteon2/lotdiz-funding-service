@@ -6,10 +6,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-// @FeignClient(name = "deliveryServiceClient", url = "${endpoint.delivery-service}")
-@FeignClient(
-    name = "deliveryServiceClient",
-    url = "https://952a1112-3483-413d-90a6-6befa9974329.mock.pstmn.io")
+@FeignClient(name = "deliveryServiceClient", url = "${endpoint.delivery-service}")
 public interface DeliveryServiceClient {
   @PostMapping("/delivery/get-status/")
   SuccessResponse<List<String>> getDeliveryStatus(@RequestBody List<Long> fundingIds);

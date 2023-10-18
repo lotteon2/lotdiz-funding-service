@@ -34,6 +34,7 @@ import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -85,7 +86,7 @@ public class FundingService {
 
       fundingProductManager.checkEnoughStockQuantity(
           productFundingRequestDto.getProductFundingQuantity(),
-          productStockCheckResponse.getProductStockQuantity());
+          productStockCheckResponse.getProductCurrentStockQuantity());
 
       ProductStockUpdateRequest productStockUpdateRequest =
           ProductStockUpdateRequest.builder()
@@ -125,11 +126,11 @@ public class FundingService {
 //    deliveryProducer.sendCreateDelivery(createDeliveryRequestDto);
   }
 
-  public FundingAndTotalPageResponseDto getFundingInfoListResponse(Long memberId, PageRequest pageRequest) {
+  public FundingAndTotalPageResponseDto getFundingInfoListResponse(Long memberId, Pageable pageable) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
     // 펀딩 목록. (PageRequest로 페이징 처리)
-    Page<Funding> fundingsPerPage = fundingRepository.findByMemberId(memberId, pageRequest);
+    Page<Funding> fundingsPerPage = fundingRepository.findByMemberId(memberId, pageable);
     List<Funding> fundingsByMember = fundingsPerPage.getContent();
 
     // 총 페이지 수
@@ -183,7 +184,7 @@ public class FundingService {
       fundingInfoResponseDto.setProjectParticipantCount(projectParticipantCount);
 
       long totalAccumulatedFundingSupportAmount = findFundingsByProjectId.stream()
-              .filter(funding -> funding.getFundingStatus() == FundingStatus.COMPLETED)
+              .filter(funding -> funding.getFundingStatus().equals(FundingStatus.COMPLETED))
               .mapToLong(funding -> funding.getFundingTotalAmount() + funding.getFundingSupportAmount())
               .sum();
       fundingInfoResponseDto.setTotalAccumulatedFundingAmount(totalAccumulatedFundingSupportAmount);

@@ -7,11 +7,8 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-// @FeignClient(name="paymentServiceClient", url="${endpoint.payment-service}")
-@FeignClient(
-    name = "paymentServiceClient",
-    url = "https://952a1112-3483-413d-90a6-6befa9974329.mock.pstmn.io")
+@FeignClient(name = "paymentServiceClient", url = "${endpoint.payment-service}")
 public interface PaymentServiceClient {
-  @PostMapping("/payments/get-payment-info/")
+  @PostMapping("/payments/get-payment-info")
   SuccessResponse<List<PaymentInfoResponseDto>> getPaymentInfo(@RequestBody List<Long> fundingIds);
 }
