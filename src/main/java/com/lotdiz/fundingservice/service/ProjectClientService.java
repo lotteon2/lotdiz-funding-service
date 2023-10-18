@@ -1,6 +1,7 @@
 package com.lotdiz.fundingservice.service;
 
 import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDto;
+import com.lotdiz.fundingservice.dto.request.MemberInformationOfFundingResponseDto;
 import com.lotdiz.fundingservice.dto.response.GetTargetAmountCheckExceedResponseDto;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.repository.FundingRepository;
@@ -46,5 +47,9 @@ public class ProjectClientService {
                   .build();
             })
         .collect(Collectors.toList());
+  }
+
+  public MemberInformationOfFundingResponseDto getMemberFundingList(Long projectId) {
+    return MemberInformationOfFundingResponseDto.builder().build();
   }
 }
