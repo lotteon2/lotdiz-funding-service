@@ -22,6 +22,7 @@ import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,10 +35,10 @@ public class SupportWithUsService {
     private final CircuitBreakerFactory circuitBreakerFactory;
 
 @Transactional
-public SupportWithUsResponseDto getSupportWithUsInfo(Long projectId, PageRequest pageRequest){
+public SupportWithUsResponseDto getSupportWithUsInfo(Long projectId, Pageable pageable){
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
-    List<Funding> fundingList = fundingRepository.findByProjectId(projectId, pageRequest).toList();
+    List<Funding> fundingList = fundingRepository.findByProjectId(projectId, pageable).toList();
     List<Long> fundingIds = fundingList.stream().map(Funding::getFundingId).collect(Collectors.toList());
 
     Long count = fundingRepository.countFundingByProjectId(projectId);

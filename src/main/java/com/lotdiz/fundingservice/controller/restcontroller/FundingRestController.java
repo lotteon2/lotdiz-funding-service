@@ -11,7 +11,10 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -89,14 +92,10 @@ public class FundingRestController {
   public ResponseEntity<SuccessResponse<Map<String, SupportWithUsResponseDto>>>
       getSupporterWithUsInfo(
           @PathVariable Long projectId,
-          @RequestParam(defaultValue = "0") int page,
-          @RequestParam(defaultValue = "20") int size,
-          @RequestParam(defaultValue = "createdAt") String sort) {
-
-    PageRequest pageRequest = PageRequest.of(page, size, Sort.by(sort).descending());
+          @PageableDefault(page=0, size=20, sort="createdAt", direction = Direction.DESC) Pageable pageable){
 
     SupportWithUsResponseDto supportWithUsResponseDto =
-        supportWithUsService.getSupportWithUsInfo(projectId, pageRequest);
+        supportWithUsService.getSupportWithUsInfo(projectId, pageable);
 
     return ResponseEntity.ok()
         .body(
