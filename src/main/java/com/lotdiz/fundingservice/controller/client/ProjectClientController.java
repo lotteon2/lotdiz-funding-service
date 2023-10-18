@@ -1,6 +1,8 @@
 package com.lotdiz.fundingservice.controller.client;
 
+import com.lotdiz.fundingservice.dto.request.FundingAchievementResultMapResponseDto;
 import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDto;
+import com.lotdiz.fundingservice.dto.request.ProjectAmountWithIdRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProjectInformationForAchievedTargetAmountRequestDto;
 import com.lotdiz.fundingservice.dto.response.GetTargetAmountCheckExceedResponseDto;
 import com.lotdiz.fundingservice.dto.response.TargetAmountAchievedResponseDto;
@@ -15,7 +17,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -46,20 +47,26 @@ public class ProjectClientController {
   public ResponseEntity<SuccessResponse<TargetAmountAchievedResponseDto>>
       getTargetAmountAchievedProjects(
           @RequestBody List<ProjectInformationForAchievedTargetAmountRequestDto> projectInfo) {
-    TargetAmountAchievedResponseDto responseDto =
-        projectClientService.getTargetAmountAchieved(projectInfo);
     return ResponseEntity.ok()
         .body(
             SuccessResponse.<TargetAmountAchievedResponseDto>builder()
                 .code(String.valueOf(HttpStatus.OK.value()))
                 .message(HttpStatus.OK.name())
-                .data(responseDto)
+                .data(projectClientService.getTargetAmountAchieved(projectInfo))
                 .build());
   }
 
-  @GetMapping("/fundings/registered-projects-check")
-  public ResponseEntity<SuccessResponse> getRegisteredProjectDetail(@RequestParam Long projectIds) {
-    return ResponseEntity.ok().body(SuccessResponse.builder().build());
+  @PostMapping("/fundings/registered-projects-check")
+  public ResponseEntity<SuccessResponse<FundingAchievementResultMapResponseDto>>
+      getRegisteredProjectDetail(
+          @RequestBody ProjectAmountWithIdRequestDto projectAmountWithIdRequestDto) {
+    return ResponseEntity.ok()
+        .body(
+            SuccessResponse.<FundingAchievementResultMapResponseDto>builder()
+                .code(String.valueOf(HttpStatus.OK.value()))
+                .message(HttpStatus.OK.name())
+                .data(projectClientService.getRegisteredProjectList(projectAmountWithIdRequestDto))
+                .build());
   }
 
   @GetMapping("/projects/{projectId}/achievement")

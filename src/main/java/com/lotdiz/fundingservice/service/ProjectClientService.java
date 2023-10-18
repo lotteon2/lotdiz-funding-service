@@ -1,7 +1,11 @@
 package com.lotdiz.fundingservice.service;
 
+import com.lotdiz.fundingservice.dto.FundingAchievementResultOfProjectResponseDto;
+import com.lotdiz.fundingservice.dto.ProjectAmountWithIdDto;
 import com.lotdiz.fundingservice.dto.TargetAmountAchievedDto;
+import com.lotdiz.fundingservice.dto.request.FundingAchievementResultMapResponseDto;
 import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDto;
+import com.lotdiz.fundingservice.dto.request.ProjectAmountWithIdRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProjectInformationForAchievedTargetAmountRequestDto;
 import com.lotdiz.fundingservice.dto.response.GetTargetAmountCheckExceedResponseDto;
 import com.lotdiz.fundingservice.dto.response.TargetAmountAchievedResponseDto;
@@ -79,6 +83,41 @@ public class ProjectClientService {
             .collect(Collectors.toList());
     return TargetAmountAchievedResponseDto.builder()
         .targetAmountAchievedDtos(targetAmountAchievedDtos)
+        .build();
+  }
+
+  public FundingAchievementResultMapResponseDto getRegisteredProjectList(
+      ProjectAmountWithIdRequestDto projectAmountWithIdRequestDto) {
+    List<Long> projectIds =
+        projectAmountWithIdRequestDto.getProjectAmountWithIdDtos().stream()
+            .map(ProjectAmountWithIdDto::getProjectId)
+            .collect(Collectors.toList());
+    Map<Long, Long> projectAchievementInfo =
+        fundingQueryRepository.findProjectAchievementInfo(projectIds);
+    Map<Long, FundingAchievementResultOfProjectResponseDto> fundingAchievementResultOfProject =
+        projectAmountWithIdRequestDto.getProjectAmountWithIdDtos().stream()
+            .collect(
+                Collectors.toMap(
+                    ProjectAmountWithIdDto::getProjectId,
+                    item ->
+                        FundingAchievementResultOfProjectResponseDto.builder()
+                            .accumulatedFundingAmount(
+                                String.format(
+                                    "%.0f",
+                                    Double.valueOf(
+                                        projectAchievementInfo.get(item.getProjectId()))))
+                            .fundingAchievementRate(
+                                String.format(
+                                        "%.3f",
+                                        Double.valueOf(
+                                                projectAchievementInfo.get(item.getProjectId()))
+                                            / item.getTargetAmount()
+                                            * 100)
+                                    + "%")
+                            .build()));
+
+    return FundingAchievementResultMapResponseDto.builder()
+        .fundingAchievementResultOfProjects(fundingAchievementResultOfProject)
         .build();
   }
 }

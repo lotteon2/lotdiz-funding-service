@@ -21,7 +21,6 @@ public class FundingQueryRepositoryImpl implements FundingQueryRepository {
 
   @Override
   public Map<Long, List<Long>> findFundingMemberId(List<Long> projectIds) {
-    //
     return jpaQueryFactory
         .from(funding)
         .where(funding.projectId.in(projectIds))
@@ -32,6 +31,14 @@ public class FundingQueryRepositoryImpl implements FundingQueryRepository {
   public Map<Long, Long> findFundingTotalAmount() {
     return jpaQueryFactory
         .from(funding)
+        .transform(groupBy(funding.projectId).as(sum(funding.fundingTotalAmount)));
+  }
+
+  @Override
+  public Map<Long, Long> findProjectAchievementInfo(List<Long> projectIds) {
+    return jpaQueryFactory
+        .from(funding)
+        .where(funding.projectId.in(projectIds))
         .transform(groupBy(funding.projectId).as(sum(funding.fundingTotalAmount)));
   }
 }
