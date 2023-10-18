@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProjectClientService {
   private final FundingRepository fundingRepository;
+
+  @Qualifier("fundingQueryRepository")
+  private final FundingRepository fundingQueryRepository;
 
   public List<GetTargetAmountCheckExceedResponseDto> getTargetAmountCheckExceed(
       List<GetTargetAmountCheckExceedRequestDto> getTargetAmountCheckExceedRequestDtos) {
@@ -49,6 +53,8 @@ public class ProjectClientService {
   }
 
   public MemberInformationOfFundingResponseDto getMemberFundingList(Long projectId) {
-    return MemberInformationOfFundingResponseDto.builder().build();
+    return MemberInformationOfFundingResponseDto.builder()
+        .memberFundingInformationDtos(fundingQueryRepository.findMemberFundingInfo(projectId))
+        .build();
   }
 }
