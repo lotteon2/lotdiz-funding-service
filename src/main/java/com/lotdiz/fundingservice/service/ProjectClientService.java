@@ -5,6 +5,7 @@ import com.lotdiz.fundingservice.dto.ProjectAmountWithIdDto;
 import com.lotdiz.fundingservice.dto.TargetAmountAchievedDto;
 import com.lotdiz.fundingservice.dto.request.FundingAchievementResultMapResponseDto;
 import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDto;
+import com.lotdiz.fundingservice.dto.request.MemberInformationOfFundingResponseDto;
 import com.lotdiz.fundingservice.dto.request.ProjectAmountWithIdRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProjectInformationForAchievedTargetAmountRequestDto;
 import com.lotdiz.fundingservice.dto.response.GetTargetAmountCheckExceedResponseDto;
@@ -23,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ProjectClientService {
-
   private final FundingRepository fundingRepository;
 
   @Qualifier("fundingQueryRepositoryImpl")
@@ -118,6 +118,12 @@ public class ProjectClientService {
 
     return FundingAchievementResultMapResponseDto.builder()
         .fundingAchievementResultOfProjects(fundingAchievementResultOfProject)
+        .build();
+  }
+
+  public MemberInformationOfFundingResponseDto getMemberFundingList(Long projectId) {
+    return MemberInformationOfFundingResponseDto.builder()
+        .memberFundingInformationDtos(fundingQueryRepository.findMemberFundingInfo(projectId))
         .build();
   }
 }

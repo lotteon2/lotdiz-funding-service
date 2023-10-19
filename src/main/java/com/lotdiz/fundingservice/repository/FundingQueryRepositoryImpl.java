@@ -5,6 +5,8 @@ import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.list;
 import static com.querydsl.core.group.GroupBy.sum;
 
+import com.lotdiz.fundingservice.dto.MemberFundingInformationDto;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.Map;
@@ -40,5 +42,19 @@ public class FundingQueryRepositoryImpl implements FundingQueryRepository {
         .from(funding)
         .where(funding.projectId.in(projectIds))
         .transform(groupBy(funding.projectId).as(sum(funding.fundingTotalAmount)));
+  }
+
+  public List<MemberFundingInformationDto> findMemberFundingInfo(Long projectId) {
+    return jpaQueryFactory
+        .select(
+            Projections.constructor(
+                MemberFundingInformationDto.class,
+                funding.memberId,
+                funding.fundingId,
+                funding.fundingTotalAmount,
+                funding.createdAt.as("fundingDate")))
+        .from(funding)
+        .where(funding.projectId.eq(projectId))
+        .fetch();
   }
 }

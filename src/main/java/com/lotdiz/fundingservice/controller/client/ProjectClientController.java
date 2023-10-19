@@ -2,6 +2,7 @@ package com.lotdiz.fundingservice.controller.client;
 
 import com.lotdiz.fundingservice.dto.request.FundingAchievementResultMapResponseDto;
 import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDto;
+import com.lotdiz.fundingservice.dto.request.MemberInformationOfFundingResponseDto;
 import com.lotdiz.fundingservice.dto.request.ProjectAmountWithIdRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProjectInformationForAchievedTargetAmountRequestDto;
 import com.lotdiz.fundingservice.dto.response.GetTargetAmountCheckExceedResponseDto;
@@ -66,6 +67,18 @@ public class ProjectClientController {
                 .code(String.valueOf(HttpStatus.OK.value()))
                 .message(HttpStatus.OK.name())
                 .data(projectClientService.getRegisteredProjectList(projectAmountWithIdRequestDto))
+                .build());
+  }
+
+  @GetMapping("/fundings/{projectId}/registered-project-detail")
+  public ResponseEntity<SuccessResponse<MemberInformationOfFundingResponseDto>>
+      getRegisteredProject(@PathVariable Long projectId) {
+    return ResponseEntity.ok()
+        .body(
+            SuccessResponse.<MemberInformationOfFundingResponseDto>builder()
+                .code(String.valueOf(HttpStatus.OK.value()))
+                .message(HttpStatus.OK.name())
+                .data(projectClientService.getMemberFundingList(projectId))
                 .build());
   }
 }
