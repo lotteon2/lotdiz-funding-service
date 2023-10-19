@@ -11,7 +11,7 @@ spring:
     password: guest
   kafka:
     producer:
-      bootstrap-servers: kafka-service:9092
+      bootstrap-servers: localhost:9092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       # Leader Broker가 메시지를 받았는지 확인 신호 요청
