@@ -1,6 +1,7 @@
 package com.lotdiz.fundingservice.service;
 
 import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDto;
+import com.lotdiz.fundingservice.dto.request.MemberInformationOfFundingResponseDto;
 import com.lotdiz.fundingservice.dto.response.GetTargetAmountCheckExceedResponseDto;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.repository.FundingRepository;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProjectClientService {
   private final FundingRepository fundingRepository;
+
+  @Qualifier("fundingQueryRepository")
+  private final FundingRepository fundingQueryRepository;
 
   public List<GetTargetAmountCheckExceedResponseDto> getTargetAmountCheckExceed(
       List<GetTargetAmountCheckExceedRequestDto> getTargetAmountCheckExceedRequestDtos) {
@@ -45,5 +50,11 @@ public class ProjectClientService {
                   .build();
             })
         .collect(Collectors.toList());
+  }
+
+  public MemberInformationOfFundingResponseDto getMemberFundingList(Long projectId) {
+    return MemberInformationOfFundingResponseDto.builder()
+        .memberFundingInformationDtos(fundingQueryRepository.findMemberFundingInfo(projectId))
+        .build();
   }
 }
