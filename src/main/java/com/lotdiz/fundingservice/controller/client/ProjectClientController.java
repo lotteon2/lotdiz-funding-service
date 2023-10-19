@@ -1,8 +1,12 @@
 package com.lotdiz.fundingservice.controller.client;
 
+import com.lotdiz.fundingservice.dto.request.FundingAchievementResultMapResponseDto;
 import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDto;
 import com.lotdiz.fundingservice.dto.request.MemberInformationOfFundingResponseDto;
+import com.lotdiz.fundingservice.dto.request.ProjectAmountWithIdRequestDto;
+import com.lotdiz.fundingservice.dto.request.ProjectInformationForAchievedTargetAmountRequestDto;
 import com.lotdiz.fundingservice.dto.response.GetTargetAmountCheckExceedResponseDto;
+import com.lotdiz.fundingservice.dto.response.TargetAmountAchievedResponseDto;
 import com.lotdiz.fundingservice.service.ProjectClientService;
 import com.lotdiz.fundingservice.utils.SuccessResponse;
 import java.util.List;
@@ -37,6 +41,32 @@ public class ProjectClientController {
                 .message(HttpStatus.OK.name())
                 .detail("성공")
                 .data(getTargetAmountCheckExceedResponseDtos)
+                .build());
+  }
+
+  @PostMapping("/fundings/target-amount-projects-information")
+  public ResponseEntity<SuccessResponse<TargetAmountAchievedResponseDto>>
+      getTargetAmountAchievedProjects(
+          @RequestBody List<ProjectInformationForAchievedTargetAmountRequestDto> projectInfo) {
+    return ResponseEntity.ok()
+        .body(
+            SuccessResponse.<TargetAmountAchievedResponseDto>builder()
+                .code(String.valueOf(HttpStatus.OK.value()))
+                .message(HttpStatus.OK.name())
+                .data(projectClientService.getTargetAmountAchieved(projectInfo))
+                .build());
+  }
+
+  @PostMapping("/fundings/registered-projects-check")
+  public ResponseEntity<SuccessResponse<FundingAchievementResultMapResponseDto>>
+      getRegisteredProjectDetail(
+          @RequestBody ProjectAmountWithIdRequestDto projectAmountWithIdRequestDto) {
+    return ResponseEntity.ok()
+        .body(
+            SuccessResponse.<FundingAchievementResultMapResponseDto>builder()
+                .code(String.valueOf(HttpStatus.OK.value()))
+                .message(HttpStatus.OK.name())
+                .data(projectClientService.getRegisteredProjectList(projectAmountWithIdRequestDto))
                 .build());
   }
 

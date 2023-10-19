@@ -1,8 +1,15 @@
 package com.lotdiz.fundingservice.service;
 
+import com.lotdiz.fundingservice.dto.FundingAchievementResultOfProjectResponseDto;
+import com.lotdiz.fundingservice.dto.ProjectAmountWithIdDto;
+import com.lotdiz.fundingservice.dto.TargetAmountAchievedDto;
+import com.lotdiz.fundingservice.dto.request.FundingAchievementResultMapResponseDto;
 import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDto;
 import com.lotdiz.fundingservice.dto.request.MemberInformationOfFundingResponseDto;
+import com.lotdiz.fundingservice.dto.request.ProjectAmountWithIdRequestDto;
+import com.lotdiz.fundingservice.dto.request.ProjectInformationForAchievedTargetAmountRequestDto;
 import com.lotdiz.fundingservice.dto.response.GetTargetAmountCheckExceedResponseDto;
+import com.lotdiz.fundingservice.dto.response.TargetAmountAchievedResponseDto;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.repository.FundingRepository;
 import java.util.List;
@@ -19,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProjectClientService {
   private final FundingRepository fundingRepository;
 
-  @Qualifier("fundingQueryRepository")
+  @Qualifier("fundingQueryRepositoryImpl")
   private final FundingRepository fundingQueryRepository;
 
   public List<GetTargetAmountCheckExceedResponseDto> getTargetAmountCheckExceed(
@@ -50,6 +57,68 @@ public class ProjectClientService {
                   .build();
             })
         .collect(Collectors.toList());
+  }
+
+  public TargetAmountAchievedResponseDto getTargetAmountAchieved(
+      List<ProjectInformationForAchievedTargetAmountRequestDto> projectInfo) {
+
+    Map<Long, Long> fundingTotalAmount = fundingQueryRepository.findFundingTotalAmount();
+
+    List<Long> projectIds =
+        projectInfo.stream()
+            .filter(
+                item -> item.getProjectTargetAmount() < fundingTotalAmount.get(item.getProjectId()))
+            .map(ProjectInformationForAchievedTargetAmountRequestDto::getProjectId)
+            .collect(Collectors.toList());
+
+    Map<Long, List<Long>> fundingMemberId = fundingQueryRepository.findFundingMemberId(projectIds);
+    List<TargetAmountAchievedDto> targetAmountAchievedDtos =
+        projectInfo.stream()
+            .map(
+                item ->
+                    TargetAmountAchievedDto.builder()
+                        .projectName(item.getProjectName())
+                        .memberIds(fundingMemberId.get(item.getProjectId()))
+                        .build())
+            .collect(Collectors.toList());
+    return TargetAmountAchievedResponseDto.builder()
+        .targetAmountAchievedDtos(targetAmountAchievedDtos)
+        .build();
+  }
+
+  public FundingAchievementResultMapResponseDto getRegisteredProjectList(
+      ProjectAmountWithIdRequestDto projectAmountWithIdRequestDto) {
+    List<Long> projectIds =
+        projectAmountWithIdRequestDto.getProjectAmountWithIdDtos().stream()
+            .map(ProjectAmountWithIdDto::getProjectId)
+            .collect(Collectors.toList());
+    Map<Long, Long> projectAchievementInfo =
+        fundingQueryRepository.findProjectAchievementInfo(projectIds);
+    Map<Long, FundingAchievementResultOfProjectResponseDto> fundingAchievementResultOfProject =
+        projectAmountWithIdRequestDto.getProjectAmountWithIdDtos().stream()
+            .collect(
+                Collectors.toMap(
+                    ProjectAmountWithIdDto::getProjectId,
+                    item ->
+                        FundingAchievementResultOfProjectResponseDto.builder()
+                            .accumulatedFundingAmount(
+                                String.format(
+                                    "%.0f",
+                                    Double.valueOf(
+                                        projectAchievementInfo.get(item.getProjectId()))))
+                            .fundingAchievementRate(
+                                String.format(
+                                        "%.3f",
+                                        Double.valueOf(
+                                                projectAchievementInfo.get(item.getProjectId()))
+                                            / item.getTargetAmount()
+                                            * 100)
+                                    + "%")
+                            .build()));
+
+    return FundingAchievementResultMapResponseDto.builder()
+        .fundingAchievementResultOfProjects(fundingAchievementResultOfProject)
+        .build();
   }
 
   public MemberInformationOfFundingResponseDto getMemberFundingList(Long projectId) {
