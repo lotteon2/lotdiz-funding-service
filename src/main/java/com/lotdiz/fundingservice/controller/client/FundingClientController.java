@@ -41,14 +41,14 @@ public class FundingClientController {
   }
 
   @PostMapping("/projects/achievement")
-  public SuccessResponse<HashMap<String, List<FundingAchievementResultOfProjectResponseDto>>>
+  public SuccessResponse<HashMap<String, FundingAchievementResultOfProjectResponseDto>>
       getFundingOfProject(@RequestBody List<FundingAchievementResultOfProjectRequestDto> projects) {
 
-    HashMap<String, List<FundingAchievementResultOfProjectResponseDto>> map =
+    HashMap<String, FundingAchievementResultOfProjectResponseDto> map =
         projectClientService.getFundingMultipleAchievementResults(projects);
 
     return SuccessResponse
-        .<HashMap<String, List<FundingAchievementResultOfProjectResponseDto>>>builder()
+        .<HashMap<String, FundingAchievementResultOfProjectResponseDto>>builder()
         .code(String.valueOf(HttpStatus.OK.value()))
         .message(HttpStatus.OK.name())
         .detail("펀딩 달성 결과 조회 (목록 페이지) 성공")

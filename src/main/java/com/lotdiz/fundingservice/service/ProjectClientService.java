@@ -5,7 +5,6 @@ import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDt
 import com.lotdiz.fundingservice.dto.response.FundingAchievementResultOfProjectDetailResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingAchievementResultOfProjectResponseDto;
 import com.lotdiz.fundingservice.dto.response.GetTargetAmountCheckExceedResponseDto;
-import com.lotdiz.fundingservice.dto.response.ProjectAndFundingDto;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.repository.FundingRepository;
 import java.util.HashMap;
@@ -53,7 +52,7 @@ public class ProjectClientService {
         .collect(Collectors.toList());
   }
 
-  public HashMap<String, List<FundingAchievementResultOfProjectResponseDto>>
+  public HashMap<String, FundingAchievementResultOfProjectResponseDto>
       getFundingMultipleAchievementResults(
           List<FundingAchievementResultOfProjectRequestDto> projects) {
 
@@ -68,32 +67,28 @@ public class ProjectClientService {
             .collect(Collectors.groupingBy(Funding::getProjectId));
 
     // 프로젝트id 별로 펀딩 객체를 조회하여 정보를 계산하고 반환된 List 값을 projectId를 key로 HashMap에 추가.
-    return (HashMap<String, List<FundingAchievementResultOfProjectResponseDto>>)
-        projects.stream()
-            .map(
-                project -> {
-                  List<Funding> fundings = projectIdToFunding.get(project.getProjectId());
 
-                  long totalAmounts =
-                      (fundings != null)
-                          ? fundings.stream().mapToLong(Funding::getFundingTotalAmount).sum()
-                          : 0L;
+    HashMap<String, FundingAchievementResultOfProjectResponseDto> map = new HashMap<>();
 
-                  FundingAchievementResultOfProjectResponseDto dto =
-                      FundingAchievementResultOfProjectResponseDto.builder()
-                          .fundingAchievementRate(
-                              totalAmounts
-                                  * 100
-                                  / (fundings != null ? project.getProjectTargetAmount() : 1))
-                          .accumulatedFundingAmount(totalAmounts)
-                          .build();
+    for (FundingAchievementResultOfProjectRequestDto project : projects) {
+      Long projectId = project.getProjectId();
+      List<Funding> fundings = projectIdToFunding.get(projectId);
 
-                  return ProjectAndFundingDto.builder().projectId(project.getProjectId()).dto(dto).build();
-                })
-            .collect(
-                Collectors.groupingBy(
-                    p -> Long.toString(p.getProjectId()),
-                    Collectors.mapping(ProjectAndFundingDto::getDto, Collectors.toList())));
+      long totalAmounts =
+          (fundings != null)
+              ? fundings.stream().mapToLong(Funding::getFundingTotalAmount).sum()
+              : 0L;
+
+      FundingAchievementResultOfProjectResponseDto dto =
+          FundingAchievementResultOfProjectResponseDto.builder()
+              .fundingAchievementRate(
+                  totalAmounts * 100 / (fundings != null ? project.getProjectTargetAmount() : 1))
+              .accumulatedFundingAmount(totalAmounts)
+              .build();
+
+      map.put(projectId.toString(), dto);
+    }
+    return map;
   }
 
   public FundingAchievementResultOfProjectDetailResponseDto getFundingSingleAchievementResult(
@@ -104,13 +99,10 @@ public class ProjectClientService {
     long count = fundings.size();
     long totalAmounts = fundings.stream().mapToLong(Funding::getFundingTotalAmount).sum();
 
-      FundingAchievementResultOfProjectDetailResponseDto dto =
-              FundingAchievementResultOfProjectDetailResponseDto.builder()
+    return FundingAchievementResultOfProjectDetailResponseDto.builder()
         .fundingAchievementRate(totalAmounts * 100 / projectTargetAmount)
         .accumulatedFundingAmount(totalAmounts)
         .numberOfBuyers(count)
         .build();
-
-      return dto;
   }
 }
