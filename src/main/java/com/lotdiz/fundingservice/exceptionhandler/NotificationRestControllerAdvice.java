@@ -4,18 +4,22 @@ import com.lotdiz.fundingservice.utils.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @Slf4j
 @RestControllerAdvice
-public class NotificationRestControllerAdvice {
+public class NotificationRestControllerAdvice extends ResponseEntityExceptionHandler {
 
   private static final String UNIQUE_CONSTRAINT_EXCEPTION_MESSAGE = "유니크 제약조건 오류";
   private static final String DUPLICATE_KEY_EXCEPTION_MESSAGE = "중복 키 오류";
+  private static final String METHOD_ARGUMENT_NOT_VALID_EXCEPTION_MESSAGE = "VALIDATION 오류";
 
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<ErrorResponse> constraintViolationException(
@@ -46,20 +50,26 @@ public class NotificationRestControllerAdvice {
     return ResponseEntity.status(statusCode).body(errorResponse);
   }
 
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ErrorResponse> invalidRequestHandler(MethodArgumentNotValidException e) {
+  @Override
+  protected ResponseEntity<Object> handleMethodArgumentNotValid(
+      MethodArgumentNotValidException e,
+      HttpHeaders headers,
+      HttpStatus status,
+      WebRequest request) {
+
     log.error("{}", e.getMessage());
-    int statusCode = HttpStatus.BAD_REQUEST.value();
-    ErrorResponse errorResponse =
+
+    ErrorResponse body =
         ErrorResponse.builder()
-            .code(String.valueOf(statusCode))
-            .message(
+            .code(String.valueOf(HttpStatus.BAD_REQUEST.value()))
+            .message(METHOD_ARGUMENT_NOT_VALID_EXCEPTION_MESSAGE)
+            .detail(
                 e.getBindingResult().getFieldError() == null
                     ? e.getMessage()
                     : e.getBindingResult().getFieldError().getDefaultMessage())
-            .detail(e.getCause().getMessage())
             .build();
-    return ResponseEntity.status(statusCode).body(errorResponse);
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST.value()).body(body);
   }
 
   @ExceptionHandler(Exception.class)
