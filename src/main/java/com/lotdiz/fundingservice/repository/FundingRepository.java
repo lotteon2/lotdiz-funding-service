@@ -3,6 +3,7 @@ package com.lotdiz.fundingservice.repository;
 import com.lotdiz.fundingservice.dto.TotalAmountWithProjectIdDto;
 import com.lotdiz.fundingservice.entity.Funding;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +17,8 @@ public interface FundingRepository extends JpaRepository<Funding, Long>, Funding
   Page<Funding> findByMemberId(Long memberId, Pageable pageable);
 
   List<Funding> findByProjectId(Long projectId);
+
+  Optional<Funding> findByFundingId(Long fundingId);
 
   @Query(
       value =

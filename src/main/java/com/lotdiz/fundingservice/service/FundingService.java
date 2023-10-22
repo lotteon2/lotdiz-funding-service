@@ -6,20 +6,24 @@ import com.lotdiz.fundingservice.dto.request.KakaoPayApproveRequestDto;
 import com.lotdiz.fundingservice.dto.request.MemberPointUpdateRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
+import com.lotdiz.fundingservice.dto.request.ProjectAndProductInfoRequestDto;
 import com.lotdiz.fundingservice.dto.response.FundingAndTotalPageResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.PaymentInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.dto.response.ProjectAndMakerInfoResponseDto;
+import com.lotdiz.fundingservice.dto.response.ProjectAndProductInfoResponseDto;
 import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.FundingStatus;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
 import com.lotdiz.fundingservice.exception.DeliveryStatusNotFoundException;
+import com.lotdiz.fundingservice.exception.FundingEntityNotFoundException;
 import com.lotdiz.fundingservice.exception.MemberServiceClientOutOfServiceException;
 import com.lotdiz.fundingservice.exception.PaymentInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.PaymentServiceOutOfServiceException;
 import com.lotdiz.fundingservice.exception.ProjectAndMakerInfoNotFoundException;
+import com.lotdiz.fundingservice.exception.ProjectAndProductInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.ProjectServiceOutOfServiceException;
 import com.lotdiz.fundingservice.messagequeue.kafka.DeliveryProducer;
 import com.lotdiz.fundingservice.repository.FundingRepository;
@@ -245,5 +249,43 @@ public class FundingService {
             .build();
 
     return responseDto;
+  }
+
+  /**
+   * 펀딩 내역 상세 조회 API
+   *
+   * @param fundingId
+   * @return projectAndProductInfoResponseDtos (List<ProjectAndProductInfoResponseDto>)
+   */
+  public ProjectAndProductInfoResponseDto getFundingDetailsResponse(Long fundingId) {
+    CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
+
+    // 프로젝트 id 찾기
+    Funding funding =
+        fundingRepository
+            .findByFundingId(fundingId)
+            .orElseThrow(FundingEntityNotFoundException::new);
+
+    Long projectId = funding.getProjectId();
+
+    // 상품 ids 찾기
+    List<ProductFunding> productFundings = productFundingRepository.findByFunding(funding);
+    List<Long> productIds =
+        productFundings.stream().map(ProductFunding::getProductId).collect(Collectors.toList());
+
+    ProjectAndProductInfoRequestDto projectAndProductInfoRequestDto =
+        ProjectAndProductInfoRequestDto.toDto(projectId, productIds);
+
+    // project-service로 정보 요청
+    ProjectAndProductInfoResponseDto projectAndProductInfoResponseDtos =
+        (ProjectAndProductInfoResponseDto)
+            circuitBreaker.run(
+                () ->
+                    projectServiceClient
+                        .getProjectAndProductInfo(projectAndProductInfoRequestDto)
+                        .getData(),
+                throwable -> new ProjectAndProductInfoNotFoundException());
+
+    return projectAndProductInfoResponseDtos;
   }
 }

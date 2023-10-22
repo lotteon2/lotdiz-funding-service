@@ -3,6 +3,7 @@ package com.lotdiz.fundingservice.controller.restcontroller;
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
 import com.lotdiz.fundingservice.dto.response.FundingAndTotalPageResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingInfoResponseDto;
+import com.lotdiz.fundingservice.dto.response.ProjectAndProductInfoResponseDto;
 import com.lotdiz.fundingservice.service.FundingService;
 import com.lotdiz.fundingservice.utils.SuccessResponse;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -62,6 +64,23 @@ public class FundingRestController {
                 .message(HttpStatus.OK.name())
                 .detail("펀딩 내역 조회 성공")
                 .data(Map.of("fundingList", responseDto))
+                .build());
+  }
+
+  @GetMapping("/fundings/{fundingId}")
+  public ResponseEntity<SuccessResponse<Map<String, ProjectAndProductInfoResponseDto>>>
+      getFundingDetails(@PathVariable Long fundingId) {
+
+    ProjectAndProductInfoResponseDto projectAndProductInfoResponseDto =
+        fundingService.getFundingDetailsResponse(fundingId);
+
+    return ResponseEntity.ok()
+        .body(
+            SuccessResponse.<Map<String, ProjectAndProductInfoResponseDto>>builder()
+                .code(String.valueOf(HttpStatus.OK.value()))
+                .message(HttpStatus.OK.name())
+                .detail("펀딩 내역 상세 조회 성공")
+                .data(Map.of("fundingDetails", projectAndProductInfoResponseDto))
                 .build());
   }
 }
