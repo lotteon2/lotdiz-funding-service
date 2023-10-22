@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -103,6 +104,19 @@ public class FundingRestController {
                 .message(HttpStatus.OK.name())
                 .detail("함께하는 서포터 조회 성공")
                 .data(Map.of("supporterWithUsInfo", supportWithUsResponseDto))
+                .build());
+  }
+
+  @DeleteMapping("/fundings/{fundingId}")
+  public ResponseEntity<SuccessResponse> cancelFunding(@PathVariable Long fundingId) {
+    fundingService.cancelFunding(fundingId);
+
+    return ResponseEntity.ok()
+        .body(
+            SuccessResponse.builder()
+                .code(String.valueOf(HttpStatus.OK.value()))
+                .message(HttpStatus.OK.name())
+                .detail("펀딩 취소 성공")
                 .build());
   }
 }

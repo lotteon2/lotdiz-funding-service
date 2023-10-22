@@ -1,6 +1,5 @@
 package com.lotdiz.fundingservice.dto.request;
 
-import javax.validation.constraints.NotNull.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

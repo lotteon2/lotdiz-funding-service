@@ -17,6 +17,9 @@ public interface MemberServiceClient {
   SuccessResponse<Map<String, MemberInfoResponseDto>> getMemberInfo(
       @RequestParam List<Long> memberIds);
 
+  @PutMapping("/members/point/refund")
+  SuccessResponse refundMemberPoint(@RequestBody MemberPointUpdateRequestDto updateMemberPoint);
+
   @PutMapping("/members/point")
   SuccessResponse usePoint(@RequestBody MemberPointUpdateRequestDto memberPointUpdateRequestDto);
 }
