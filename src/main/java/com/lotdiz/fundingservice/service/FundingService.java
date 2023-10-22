@@ -257,6 +257,7 @@ public class FundingService {
    * @param fundingId
    * @return projectAndProductInfoResponseDtos (List<ProjectAndProductInfoResponseDto>)
    */
+  @Transactional
   public ProjectAndProductInfoResponseDto getFundingDetailsResponse(Long fundingId) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 

@@ -18,6 +18,10 @@ public interface FundingRepository extends JpaRepository<Funding, Long>, Funding
 
   List<Funding> findByProjectId(Long projectId);
 
+  Page<Funding> findByProjectId(Long projectId, Pageable pageable);
+
+  Long countFundingByProjectId(Long projectId);
+
   Optional<Funding> findByFundingId(Long fundingId);
 
   @Query(
