@@ -1,4 +1,4 @@
-package com.lotdiz.fundingservice.dto.response;
+package com.lotdiz.fundingservice.dto;
 
 import java.util.List;
 import lombok.AccessLevel;
@@ -9,8 +9,9 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class GetStockQuantityCheckExceedResponseDto {
-    List<ProductStockCheckResponse> productStockCheckResponses;
+@AllArgsConstructor
+public class TargetAmountAchievedDto {
+  private String projectName;
+  private List<Long> memberIds;
 }

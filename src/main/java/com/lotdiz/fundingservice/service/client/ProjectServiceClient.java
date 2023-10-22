@@ -25,5 +25,4 @@ public interface ProjectServiceClient {
   @GetMapping("/projects/get-project-maker-info")
   SuccessResponse<List<ProjectAndMakerInfoResponseDto>> getProjectAndMakerInfo(
       @RequestParam List<Long> projectIds);
-
 }

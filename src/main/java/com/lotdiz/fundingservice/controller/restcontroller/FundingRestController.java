@@ -31,9 +31,10 @@ public class FundingRestController {
 
   @PostMapping("/projects/{projectId}/fundings")
   public ResponseEntity<SuccessResponse> createFunding(
+      @RequestHeader Long memberId,
       @RequestBody CreateFundingRequestDto createFundingRequestDto) {
     // Funding, ProductFunding 저장.
-    fundingService.createFunding(createFundingRequestDto);
+    fundingService.createFunding(createFundingRequestDto, memberId);
 
     return ResponseEntity.ok()
         .body(
