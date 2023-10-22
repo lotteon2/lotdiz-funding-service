@@ -1,6 +1,7 @@
 package com.lotdiz.fundingservice.controller.restcontroller;
 
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
+import com.lotdiz.fundingservice.dto.response.FundingAndTotalPageResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProjectAndProductInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.SupportWithUsResponseDto;
@@ -35,9 +36,10 @@ public class FundingRestController {
 
   @PostMapping("/projects/{projectId}/fundings")
   public ResponseEntity<SuccessResponse> createFunding(
+      @RequestHeader Long memberId,
       @RequestBody CreateFundingRequestDto createFundingRequestDto) {
     // Funding, ProductFunding 저장.
-    fundingService.createFunding(createFundingRequestDto);
+    fundingService.createFunding(createFundingRequestDto, memberId);
 
     return ResponseEntity.ok()
         .body(
@@ -49,25 +51,22 @@ public class FundingRestController {
   }
 
   @GetMapping("/fundings")
-  public ResponseEntity<SuccessResponse<Map<String, List<FundingInfoResponseDto>>>>
+  public ResponseEntity<SuccessResponse<Map<String, FundingAndTotalPageResponseDto>>>
       getFundingsByMember(
-          @RequestHeader(required = false) Long memberId,
-          @RequestParam(defaultValue = "0") int page,
-          @RequestParam(defaultValue = "10") int size,
-          @RequestParam(defaultValue = "createdAt") String sort) {
+          @RequestHeader(required = true) Long memberId,
+          @PageableDefault(page = 0, size = 5, sort = "createdAt", direction = Direction.DESC)
+              Pageable pageable) {
 
-    PageRequest pageRequest = PageRequest.of(page, size, Sort.by(sort).descending());
-
-    List<FundingInfoResponseDto> fundingInfoListResponse =
-        fundingService.getFundingInfoListResponse(memberId, pageRequest);
+    FundingAndTotalPageResponseDto responseDto =
+        fundingService.getFundingInfoListResponse(memberId, pageable);
 
     return ResponseEntity.ok()
         .body(
-            SuccessResponse.<Map<String, List<FundingInfoResponseDto>>>builder()
+            SuccessResponse.<Map<String, FundingAndTotalPageResponseDto>>builder()
                 .code(String.valueOf(HttpStatus.OK.value()))
                 .message(HttpStatus.OK.name())
                 .detail("펀딩 내역 조회 성공")
-                .data(Map.of("fundingList", fundingInfoListResponse))
+                .data(Map.of("fundingList", responseDto))
                 .build());
   }
 

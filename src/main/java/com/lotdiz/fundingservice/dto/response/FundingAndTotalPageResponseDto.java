@@ -6,11 +6,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Getter
 @Builder
+@Getter
+@Setter
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class GetStockQuantityCheckExceedResponseDto {
-    List<ProductStockCheckResponse> productStockCheckResponses;
+public class FundingAndTotalPageResponseDto {
+    private Long totalPages;
+    private List<FundingInfoResponseDto> fundingInfoResponseDtos;
 }
