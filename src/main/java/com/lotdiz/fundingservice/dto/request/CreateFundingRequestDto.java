@@ -14,9 +14,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CreateFundingRequestDto {
-  private Long memberId;
+  private String tid;
+  private String pgToken;
+  private String partnerOrderId;
+  private String partnerUserId;
   private Long projectId;
   private List<ProductFundingRequestDto> products;
+  private String itemName;
   private String fundingSupporterEmail;
   private Long fundingTotalAmount;
   private Boolean fundingIsRefundable;
@@ -38,7 +42,7 @@ public class CreateFundingRequestDto {
   private String deliveryAddressZipCode;
   private Boolean deliveryAddressIsDefault;
 
-  public Funding toFundingEntity() {
+  public Funding toFundingEntity(Long memberId) {
     return Funding.builder()
         .memberId(memberId)
         .projectId(projectId)
