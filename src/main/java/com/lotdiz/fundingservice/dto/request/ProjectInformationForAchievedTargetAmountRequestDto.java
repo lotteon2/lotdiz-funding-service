@@ -6,11 +6,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Builder
 @Getter
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class MemberPointUpdateRequestDto {
-    private Long memberId;
-    private Long memberPoint;
+public class ProjectInformationForAchievedTargetAmountRequestDto {
+
+  private Long projectId;
+  private String projectName;
+  private Long projectTargetAmount;
 }

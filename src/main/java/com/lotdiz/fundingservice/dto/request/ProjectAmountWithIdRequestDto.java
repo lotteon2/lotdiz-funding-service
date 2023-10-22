@@ -1,5 +1,7 @@
 package com.lotdiz.fundingservice.dto.request;
 
+import com.lotdiz.fundingservice.dto.ProjectAmountWithIdDto;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,9 +10,8 @@ import lombok.NoArgsConstructor;
 
 @Builder
 @Getter
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class MemberPointUpdateRequestDto {
-    private Long memberId;
-    private Long memberPoint;
+@AllArgsConstructor
+public class ProjectAmountWithIdRequestDto {
+    private List<ProjectAmountWithIdDto> projectAmountWithIdDtos;
 }

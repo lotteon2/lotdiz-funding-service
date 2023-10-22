@@ -1,10 +1,13 @@
 package com.lotdiz.fundingservice.service;
 
+import com.lotdiz.fundingservice.dto.request.CreateDeliveryRequestDto;
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
+import com.lotdiz.fundingservice.dto.request.KakaoPayApproveRequestDto;
 import com.lotdiz.fundingservice.dto.request.MemberPointUpdateRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
 import com.lotdiz.fundingservice.dto.request.ProjectAndProductInfoRequestDto;
+import com.lotdiz.fundingservice.dto.response.FundingAndTotalPageResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.PaymentInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
@@ -16,7 +19,10 @@ import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
 import com.lotdiz.fundingservice.exception.DeliveryStatusNotFoundException;
 import com.lotdiz.fundingservice.exception.MemberServiceOutOfServiceException;
+import com.lotdiz.fundingservice.exception.FundingEntityNotFoundException;
+import com.lotdiz.fundingservice.exception.MemberServiceClientOutOfServiceException;
 import com.lotdiz.fundingservice.exception.PaymentInfoNotFoundException;
+import com.lotdiz.fundingservice.exception.PaymentServiceOutOfServiceException;
 import com.lotdiz.fundingservice.exception.ProjectAndMakerInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.ProjectAndProductInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.ProjectServiceOutOfServiceException;
@@ -39,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -65,9 +71,10 @@ public class FundingService {
    * @return fundingId(Long)
    */
   @Transactional
-  public void createFunding(CreateFundingRequestDto createFundingRequestDto) {
+  public void createFunding(CreateFundingRequestDto createFundingRequestDto, Long memberId) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
+    // List<productId> 를 찾는다.
     List<ProductFundingRequestDto> productFundingRequestDtos =
         createFundingRequestDto.getProducts();
     List<Long> productIds =
@@ -75,6 +82,7 @@ public class FundingService {
             .map(ProductFundingRequestDto::getProductId)
             .collect(Collectors.toList());
 
+    // 1. 재고 확인.
     List<ProductStockCheckResponse> productStockCheckResponseList =
         (List<ProductStockCheckResponse>)
             circuitBreaker.run(
@@ -89,7 +97,7 @@ public class FundingService {
 
       fundingProductManager.checkEnoughStockQuantity(
           productFundingRequestDto.getProductFundingQuantity(),
-          productStockCheckResponse.getProductStockQuantity());
+          productStockCheckResponse.getProductCurrentStockQuantity());
 
       ProductStockUpdateRequest productStockUpdateRequest =
           ProductStockUpdateRequest.builder()
@@ -100,8 +108,14 @@ public class FundingService {
       productStockUpdateRequests.add(productStockUpdateRequest);
     }
 
+    // 2. 재고 차감.
+    circuitBreaker.run(
+        () -> projectServiceClient.updateStockQuantity(productStockUpdateRequests),
+        throwable -> new ProjectServiceOutOfServiceException());
+
+    // 3. 엔티티 저장.
     // (Funding) DTO->ENTITY
-    Funding funding = createFundingRequestDto.toFundingEntity();
+    Funding funding = createFundingRequestDto.toFundingEntity(memberId);
     Funding savedFunding = fundingRepository.save(funding);
 
     // (ProductFunding) DTO->ENTITY
@@ -115,28 +129,45 @@ public class FundingService {
     SupporterWithUs supporterWithUs = createFundingRequestDto.toSupporterWithUsEntity(savedFunding);
     supporterWithUsRepository.save(supporterWithUs);
 
-    // TODO: 결제
-
-    // project-service로 재고 update
+    // 4. 결제승인 요청
+    KakaoPayApproveRequestDto approveRequestDto =
+        KakaoPayApproveRequestDto.builder()
+            .fundingId(savedFunding.getFundingId())
+            .tid(createFundingRequestDto.getTid())
+            .pgToken(createFundingRequestDto.getPgToken())
+            .partnerOrderId(createFundingRequestDto.getPartnerOrderId())
+            .partnerUserId(createFundingRequestDto.getPartnerUserId())
+            .build();
     circuitBreaker.run(
-        () -> projectServiceClient.updateStockQuantity(productStockUpdateRequests),
-        throwable -> new ProjectServiceOutOfServiceException());
+        () -> paymentServiceClient.payApprove(approveRequestDto),
+        throwable -> new PaymentServiceOutOfServiceException());
 
-    // TODO: 배송 Kafka send (카프카 에러 해결 하기)
-    //    CreateDeliveryRequestDto createDeliveryRequestDto =
-    //        CreateDeliveryRequestDto.toDto(savedFunding, createFundingRequestDto);
-    //
-    //    deliveryProducer.sendCreateDelivery(createDeliveryRequestDto);
+    // 5. 포인트 차감
+    MemberPointUpdateRequestDto memberPointUpdateRequestDto =
+        MemberPointUpdateRequestDto.builder()
+            .memberId(memberId)
+            .memberPoint(createFundingRequestDto.getFundingUsedPoint())
+            .build();
+    circuitBreaker.run(
+        () -> memberServiceClient.usePoint(memberPointUpdateRequestDto),
+        throwable -> new MemberServiceClientOutOfServiceException());
+
+    // 6. 배송 Kafka send
+    CreateDeliveryRequestDto createDeliveryRequestDto =
+        CreateDeliveryRequestDto.toDto(savedFunding, createFundingRequestDto);
+    deliveryProducer.sendCreateDelivery(createDeliveryRequestDto);
   }
 
-  @Transactional
-  public List<FundingInfoResponseDto> getFundingInfoListResponse(
-      Long memberId, PageRequest pageRequest) {
+  public FundingAndTotalPageResponseDto getFundingInfoListResponse(
+      Long memberId, Pageable pageable) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
     // 펀딩 목록. (PageRequest로 페이징 처리)
-    Page<Funding> fundingsPerPage = fundingRepository.findByMemberId(memberId, pageRequest);
+    Page<Funding> fundingsPerPage = fundingRepository.findByMemberId(memberId, pageable);
     List<Funding> fundingsByMember = fundingsPerPage.getContent();
+
+    // 총 페이지 수
+    Long totalPages = (long) fundingsPerPage.getTotalPages();
 
     // 프로젝트Ids (회원이 참여한 프로젝트Id목록)
     List<Long> projectIds =
@@ -194,6 +225,7 @@ public class FundingService {
 
       Long totalAccumulatedFundingAndSupportAmount =
           findFundingsByProjectId.stream()
+              .filter(funding -> funding.getFundingStatus().equals(FundingStatus.COMPLETED))
               .mapToLong(
                   funding -> funding.getFundingTotalAmount() + funding.getFundingSupportAmount())
               .sum();
@@ -214,7 +246,14 @@ public class FundingService {
       // LIST에 모두 담기
       fundingInfoResponseDtos.add(fundingInfoResponseDto);
     }
-    return fundingInfoResponseDtos;
+
+    FundingAndTotalPageResponseDto responseDto =
+        FundingAndTotalPageResponseDto.builder()
+            .totalPages(totalPages)
+            .fundingInfoResponseDtos(fundingInfoResponseDtos)
+            .build();
+
+    return responseDto;
   }
 
   /**
@@ -228,7 +267,11 @@ public class FundingService {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
     // 프로젝트 id 찾기
-    Funding funding = fundingRepository.findByFundingId(fundingId);
+    Funding funding =
+        fundingRepository
+            .findByFundingId(fundingId)
+            .orElseThrow(FundingEntityNotFoundException::new);
+
     Long projectId = funding.getProjectId();
 
     // 상품 ids 찾기
@@ -261,7 +304,7 @@ public class FundingService {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
     // 펀딩 정보 찾기
-    Funding funding = fundingRepository.findByFundingId(fundingId);
+    Funding funding = fundingRepository.findByFundingId(fundingId).orElseThrow(FundingEntityNotFoundException::new);
 
     // 롯딜할인금액이 있다는 뜻은 롯딜이므로 환불이 불가능함
     fundingProductManager.checkIfRefundable(funding.getFundingLotdealDiscountAmount() > 0);

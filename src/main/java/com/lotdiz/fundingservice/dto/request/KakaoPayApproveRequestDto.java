@@ -5,12 +5,17 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Builder
+@Setter
 @Getter
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class MemberPointUpdateRequestDto {
-    private Long memberId;
-    private Long memberPoint;
+public class KakaoPayApproveRequestDto {
+  private Long fundingId;
+  private String tid;
+  private String pgToken;
+  private String partnerOrderId;
+  private String partnerUserId;
 }

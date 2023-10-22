@@ -22,6 +22,7 @@ import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,13 +35,17 @@ public class SupportWithUsService {
     private final CircuitBreakerFactory circuitBreakerFactory;
 
 @Transactional
-public SupportWithUsResponseDto getSupportWithUsInfo(Long projectId, PageRequest pageRequest){
+public SupportWithUsResponseDto getSupportWithUsInfo(Long projectId, Pageable pageable){
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
-    List<Funding> fundingList = fundingRepository.findByProjectId(projectId, pageRequest).toList();
+    Page<Funding> fundingPerPage = fundingRepository.findByProjectId(projectId, pageable);
+    List<Funding> fundingList = fundingPerPage.toList();
+
     List<Long> fundingIds = fundingList.stream().map(Funding::getFundingId).collect(Collectors.toList());
 
     Long count = fundingRepository.countFundingByProjectId(projectId);
+
+    Long totalPages = (long) fundingPerPage.getTotalPages();
 
     List<Long> memberIds = fundingList.stream().map(Funding::getMemberId).collect(Collectors.toList());
 
@@ -89,6 +94,7 @@ public SupportWithUsResponseDto getSupportWithUsInfo(Long projectId, PageRequest
     }
 
     return SupportWithUsResponseDto.builder()
+            .totalPages(totalPages)
             .count(count)
             .supporterInfoResponseDtos(supporterInfoResponseDtos)
             .build();
