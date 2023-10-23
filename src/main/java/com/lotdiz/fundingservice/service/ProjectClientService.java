@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,9 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProjectClientService {
   private final FundingRepository fundingRepository;
-
-  @Qualifier("fundingQueryRepositoryImpl")
-  private final FundingRepository fundingQueryRepository;
 
   public List<GetTargetAmountCheckExceedResponseDto> getTargetAmountCheckExceed(
       List<GetTargetAmountCheckExceedRequestDto> getTargetAmountCheckExceedRequestDtos) {
@@ -62,7 +58,7 @@ public class ProjectClientService {
   public TargetAmountAchievedResponseDto getTargetAmountAchieved(
       List<ProjectInformationForAchievedTargetAmountRequestDto> projectInfo) {
 
-    Map<Long, Long> fundingTotalAmount = fundingQueryRepository.findFundingTotalAmount();
+    Map<Long, Long> fundingTotalAmount = fundingRepository.findFundingTotalAmount();
 
     List<Long> projectIds =
         projectInfo.stream()
@@ -71,7 +67,7 @@ public class ProjectClientService {
             .map(ProjectInformationForAchievedTargetAmountRequestDto::getProjectId)
             .collect(Collectors.toList());
 
-    Map<Long, List<Long>> fundingMemberId = fundingQueryRepository.findFundingMemberId(projectIds);
+    Map<Long, List<Long>> fundingMemberId = fundingRepository.findFundingMemberId(projectIds);
     List<TargetAmountAchievedDto> targetAmountAchievedDtos =
         projectInfo.stream()
             .map(
@@ -93,7 +89,7 @@ public class ProjectClientService {
             .map(ProjectAmountWithIdDto::getProjectId)
             .collect(Collectors.toList());
     Map<Long, Long> projectAchievementInfo =
-        fundingQueryRepository.findProjectAchievementInfo(projectIds);
+        fundingRepository.findProjectAchievementInfo(projectIds);
     Map<Long, FundingAchievementResultOfProjectResponseDto> fundingAchievementResultOfProject =
         projectAmountWithIdRequestDto.getProjectAmountWithIdDtos().stream()
             .collect(
@@ -123,7 +119,7 @@ public class ProjectClientService {
 
   public MemberInformationOfFundingResponseDto getMemberFundingList(Long projectId) {
     return MemberInformationOfFundingResponseDto.builder()
-        .memberFundingInformationDtos(fundingQueryRepository.findMemberFundingInfo(projectId))
+        .memberFundingInformationDtos(fundingRepository.findMemberFundingInfo(projectId))
         .build();
   }
 }
