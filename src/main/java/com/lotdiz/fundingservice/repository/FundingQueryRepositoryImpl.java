@@ -11,9 +11,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.Map;
 import javax.persistence.EntityManager;
-import org.springframework.context.annotation.Primary;
 
-@Primary
 public class FundingQueryRepositoryImpl implements FundingQueryRepository {
   private final JPAQueryFactory jpaQueryFactory;
 
