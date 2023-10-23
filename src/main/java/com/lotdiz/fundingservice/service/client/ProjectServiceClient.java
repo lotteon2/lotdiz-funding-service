@@ -13,10 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-// @FeignClient(name="projectServiceClient", url="${endpoint.project-service}")
-@FeignClient(
-    name = "projectServiceClient",
-    url = "https://952a1112-3483-413d-90a6-6befa9974329.mock.pstmn.io")
+@FeignClient(name = "projectServiceClient", url = "${endpoint.project-service}")
 public interface ProjectServiceClient {
 
   @PostMapping("/projects/check-stock-quantity-exceed")
@@ -34,4 +31,5 @@ public interface ProjectServiceClient {
   @PostMapping("/projects/get-project-product-info")
   SuccessResponse<ProjectAndProductInfoResponseDto> getProjectAndProductInfo(
       @RequestParam ProjectAndProductInfoRequestDto projectAndProductInfoRequestDtos);
+
 }

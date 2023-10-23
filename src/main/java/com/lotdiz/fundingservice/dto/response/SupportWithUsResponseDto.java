@@ -15,5 +15,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SupportWithUsResponseDto {
   private Long count;
+  private Long totalPages;
   private List<SupporterInfoResponseDto> supporterInfoResponseDtos;
 }
