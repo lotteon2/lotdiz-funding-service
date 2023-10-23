@@ -1,6 +1,6 @@
 package com.lotdiz.fundingservice.dto.request;
 
-import com.lotdiz.fundingservice.dto.FundingAchievementResultOfProjectResponseDto;
+import com.lotdiz.fundingservice.dto.response.FundingAchievementResultOfProjectResponseDto;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

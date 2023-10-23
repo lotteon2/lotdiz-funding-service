@@ -1,4 +1,4 @@
-package com.lotdiz.fundingservice.dto;
+package com.lotdiz.fundingservice.dto.response;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 
 @Builder
 @Getter
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-public class FundingAchievementResultOfProjectResponseDto {
-  private String fundingAchievementRate;
-  private String accumulatedFundingAmount;
+public class ProjectAndFundingDto {
+    Long projectId;
+    FundingAchievementResultOfProjectResponseDto dto;
 }
