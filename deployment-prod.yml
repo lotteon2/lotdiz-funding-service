@@ -39,14 +39,14 @@ spec:
             - name: MYSQL_DATABASE
               value: funding-service
           volumeMounts:
-            - name: lotdiz-storage
+            - name: lotdiz-funding-storage
               mountPath: /var/lib/mysql
           resources:
             requests:
               memory: "2Gi"
       volumes:
-        - name: lotdiz-storage
+        - name: lotdiz-funding-storage
           persistentVolumeClaim:
-            claimName: efs-claim
+            claimName: funding-efs-claim
       restartPolicy: Always
 
