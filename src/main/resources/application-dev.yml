@@ -9,12 +9,36 @@ spring:
     port: 5672
     username: guest
     password: guest
+  kafka:
+    producer:
+      bootstrap-servers: kafka-service:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # Leader Broker가 메시지를 받았는지 확인 신호 요청
+      acks: 1
+    consumer:
+      bootstrap-servers: kafka-service:9092
+      # 컨슈머 그룹 지정 - 컨슈머 그룹안의 하나의 컨슈머가 다운되더라도 컨슈머 그룹 안의 다른 컨슈머가 읽을 수 있도록 함 또한 Offset으로 재시작시 메시지 관리 가능
+      group-id: funding-service
+      # Kafka consumer가 다운되었을 때 가장 빠른 컨슈머 오프셋을 가지는 것 부터 읽는다.
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: manual
   # DB settings
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/funding-service
     username: root
     password: 11111111
+  jpa:
+    hibernate:
+      ddl-auto: create
+    generate-ddl: true
+    properties:
+      hibernate:
+        format_sql: true
 eureka:
   client:
     register-with-eureka: true
@@ -23,3 +47,12 @@ eureka:
       defaultZone: http://discovery-service:8761/eureka
   instance:
     instance-id: ${spring.application.name}:${server.port}
+    # 기본적으로 유레카는 '호스트 이름'으로 접속하는 서비스를 레지스트리에 등록 -> 로컬(localhost)
+    # 따라서 쿠버네티스, 도커와 같이 임의의 호스트 이름을 가지는 경우는 false로 하면 클라이언트를 인식하지 못한다.
+    prefer-ip-address: true
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
