@@ -41,6 +41,9 @@ spec:
           volumeMounts:
             - name: lotdiz-storage
               mountPath: /var/lib/mysql
+          resources:
+            requests:
+              memory: "2Gi"
       volumes:
         - name: lotdiz-storage
           persistentVolumeClaim:
