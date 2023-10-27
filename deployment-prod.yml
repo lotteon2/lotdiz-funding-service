@@ -43,7 +43,7 @@ spec:
               mountPath: /var/lib/mysql
           resources:
             requests:
-              memory: "2Gi"
+              memory: "1Gi"
       volumes:
         - name: lotdiz-funding-storage
           persistentVolumeClaim:
