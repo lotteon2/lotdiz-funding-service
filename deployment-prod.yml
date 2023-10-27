@@ -41,6 +41,8 @@ spec:
           volumeMounts:
             - name: lotdiz-funding-storage
               mountPath: /var/lib/mysql
+            - name: mysql-config
+              mountPath: /etc/mysql/conf.d
           resources:
             requests:
               memory: "1Gi"
@@ -48,5 +50,8 @@ spec:
         - name: lotdiz-funding-storage
           persistentVolumeClaim:
             claimName: funding-efs-claim
+        - name: mysql-config
+          configMap:
+            name: mysql-config
       restartPolicy: Always
 
