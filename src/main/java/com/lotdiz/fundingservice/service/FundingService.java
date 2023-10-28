@@ -18,9 +18,9 @@ import com.lotdiz.fundingservice.entity.FundingStatus;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
 import com.lotdiz.fundingservice.exception.DeliveryStatusNotFoundException;
-import com.lotdiz.fundingservice.exception.MemberServiceOutOfServiceException;
 import com.lotdiz.fundingservice.exception.FundingEntityNotFoundException;
 import com.lotdiz.fundingservice.exception.MemberServiceClientOutOfServiceException;
+import com.lotdiz.fundingservice.exception.MemberServiceOutOfServiceException;
 import com.lotdiz.fundingservice.exception.PaymentInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.PaymentServiceOutOfServiceException;
 import com.lotdiz.fundingservice.exception.ProjectAndMakerInfoNotFoundException;
@@ -295,16 +295,20 @@ public class FundingService {
     return projectAndProductInfoResponseDtos;
   }
 
-/**
- * 펀딩 취소
- * @param fundingId
- */
-@Transactional
+  /**
+   * 펀딩 취소
+   *
+   * @param fundingId
+   */
+  @Transactional
   public void cancelFunding(Long fundingId) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
     // 펀딩 정보 찾기
-    Funding funding = fundingRepository.findByFundingId(fundingId).orElseThrow(FundingEntityNotFoundException::new);
+    Funding funding =
+        fundingRepository
+            .findByFundingId(fundingId)
+            .orElseThrow(FundingEntityNotFoundException::new);
 
     // 롯딜할인금액이 있다는 뜻은 롯딜이므로 환불이 불가능함
     fundingProductManager.checkIfRefundable(funding.getFundingLotdealDiscountAmount() > 0);
@@ -329,12 +333,17 @@ public class FundingService {
     // TODO: payment-service로 결제 취소 요청
 
     // 포인트 반환
-    MemberPointUpdateRequestDto memberPointUpdateRequestDto = MemberPointUpdateRequestDto.builder()
+    MemberPointUpdateRequestDto memberPointUpdateRequestDto =
+        MemberPointUpdateRequestDto.builder()
             .memberId(funding.getMemberId())
             .memberPoint(funding.getFundingUsedPoint())
             .build();
 
-    SuccessResponse successResponse = (SuccessResponse) circuitBreaker.run(()->memberServiceClient.refundMemberPoint(memberPointUpdateRequestDto), throwable -> new MemberServiceOutOfServiceException());
+    SuccessResponse successResponse =
+        (SuccessResponse)
+            circuitBreaker.run(
+                () -> memberServiceClient.refundMemberPoint(memberPointUpdateRequestDto),
+                throwable -> new MemberServiceOutOfServiceException());
     log.info(successResponse.getDetail());
   }
 }
