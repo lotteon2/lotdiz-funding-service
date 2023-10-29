@@ -85,7 +85,7 @@ public SupportWithUsResponseDto getSupportWithUsInfo(Long projectId, Pageable pa
                 .memberId(memberIds.get(i))
                 .memberName(memberNames.get(i))
                 .memberProfileImageUrl(memberProfileImageUrls.get(i))
-                .fundingtTotalAmount(fundingTotalAmounts.get(i))
+                .fundingTotalAmount(fundingTotalAmounts.get(i))
                 .fundingSupportAmount(fundingSupportAmounts.get(i))
                 .createdAt(createdAts.get(i))
                 .build();
