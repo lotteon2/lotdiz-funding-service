@@ -35,12 +35,10 @@ public class CreateFundingRequestDto {
   private Long fundingPaymentsActualAmount;
   private String deliveryAddressRecipientName;
   private String deliveryAddressRecipientPhoneNumber;
-  private String deliveryAddressRecipientEmail;
   private String deliveryAddressRequest;
   private String deliveryAddressRoadName;
   private String deliveryAddressDetail;
   private String deliveryAddressZipCode;
-  private Boolean deliveryAddressIsDefault;
 
   public Funding toFundingEntity(Long memberId) {
     return Funding.builder()
