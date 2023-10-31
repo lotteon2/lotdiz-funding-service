@@ -16,10 +16,10 @@ public class MemberClientController {
   private final MemberClientService memberClientService;
   @GetMapping("/likes/detail")
   SuccessResponse<List<FundingAchievementResultForMemberResponseDto>> getFundingInfoForMember(
-      @RequestParam List<Long> projectId) {
+      @RequestParam List<Long> projectIds) {
 
     List<FundingAchievementResultForMemberResponseDto> fundingInfoForMemberService =
-        memberClientService.getFundingInfoForMemberService(projectId);
+        memberClientService.getFundingInfoForMemberService(projectIds);
 
     return SuccessResponse.<List<FundingAchievementResultForMemberResponseDto>>builder()
         .code(String.valueOf(HttpStatus.OK.value()))
