@@ -1,7 +1,9 @@
 package com.lotdiz.fundingservice.exceptionhandler;
 
+import com.lotdiz.fundingservice.exception.common.DomainException;
 import com.lotdiz.fundingservice.utils.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpHeaders;
@@ -15,11 +17,26 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @Slf4j
 @RestControllerAdvice
-public class NotificationRestControllerAdvice extends ResponseEntityExceptionHandler {
+public class FundingRestControllerAdvice extends ResponseEntityExceptionHandler {
 
   private static final String UNIQUE_CONSTRAINT_EXCEPTION_MESSAGE = "유니크 제약조건 오류";
   private static final String DUPLICATE_KEY_EXCEPTION_MESSAGE = "중복 키 오류";
+  private static final String DOMAIN_EXCEPTION_MESSAGE = "도메인 오류";
   private static final String METHOD_ARGUMENT_NOT_VALID_EXCEPTION_MESSAGE = "VALIDATION 오류";
+
+  @ExceptionHandler(DomainException.class)
+  public ResponseEntity<ErrorResponse> domainException(DomainException e) {
+    int statusCode = e.getStatusCode();
+
+    ErrorResponse body =
+        ErrorResponse.builder()
+            .code(String.valueOf(statusCode))
+            .message(DOMAIN_EXCEPTION_MESSAGE)
+            .detail(e.getMessage())
+            .build();
+
+    return ResponseEntity.status(statusCode).body(body);
+  }
 
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<ErrorResponse> constraintViolationException(
@@ -50,6 +67,7 @@ public class NotificationRestControllerAdvice extends ResponseEntityExceptionHan
     return ResponseEntity.status(statusCode).body(errorResponse);
   }
 
+  @NotNull
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
       MethodArgumentNotValidException e,

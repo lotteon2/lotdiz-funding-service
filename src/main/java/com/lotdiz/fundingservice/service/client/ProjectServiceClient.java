@@ -24,7 +24,7 @@ public interface ProjectServiceClient {
   SuccessResponse updateStockQuantity(
       @RequestBody List<ProductStockUpdateRequest> productStockUpdateRequests);
 
-  @GetMapping("/projects/get-project-maker-info")
+  @GetMapping("/project/get-project-maker-info")
   SuccessResponse<List<ProjectAndMakerInfoResponseDto>> getProjectAndMakerInfo(
       @RequestParam List<Long> projectIds);
 

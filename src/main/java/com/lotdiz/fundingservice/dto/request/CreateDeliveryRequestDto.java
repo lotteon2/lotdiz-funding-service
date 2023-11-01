@@ -28,7 +28,6 @@ public class CreateDeliveryRequestDto {
             .deliveryRecipientName(createFundingRequestDto.getDeliveryAddressRecipientName())
             .deliveryRecipientPhoneNumber(
                     createFundingRequestDto.getDeliveryAddressRecipientPhoneNumber())
-            .deliveryRecipientEmail(createFundingRequestDto.getDeliveryAddressRecipientEmail())
             .deliveryRoadName(createFundingRequestDto.getDeliveryAddressRoadName())
             .deliveryAddressDetail(createFundingRequestDto.getDeliveryAddressRequest())
             .deliveryZipCode(createFundingRequestDto.getDeliveryAddressZipCode())

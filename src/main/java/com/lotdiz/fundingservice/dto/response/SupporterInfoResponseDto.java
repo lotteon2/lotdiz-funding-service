@@ -18,7 +18,7 @@ public class SupporterInfoResponseDto {
   private Long memberId;
   private String memberName;
   private String memberProfileImageUrl;
-  private Long fundingtTotalAmount;
+  private Long fundingTotalAmount;
   private Long fundingSupportAmount;
   private LocalDateTime createdAt;
 }

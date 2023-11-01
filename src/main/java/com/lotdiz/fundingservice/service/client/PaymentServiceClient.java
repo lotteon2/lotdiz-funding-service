@@ -14,7 +14,7 @@ public interface PaymentServiceClient {
   @PostMapping("/payments/get-payment-info")
   SuccessResponse<List<PaymentInfoResponseDto>> getPaymentInfo(@RequestBody List<Long> fundingIds);
 
-  @PostMapping("/funding/payments/ready")
+  @PostMapping("/funding/payments/approval")
   ResponseEntity<SuccessResponse> payApprove(
-      @RequestBody KakaoPayApproveRequestDto readyRequestDto);
+      @RequestBody KakaoPayApproveRequestDto approveRequestDto);
 }
