@@ -26,6 +26,9 @@ public class FundingDetailsInfoResponseDto {
   private Long fundingTotalAmount;
   private Long fundingUsedPoint;
   private Long fundingSupportAmount;
+  private Long fundingMembershipDiscountAmount;
+
+  private Long fundingPaymentsActualAmount;
 
   private List<ProductFundingInfoResponseDto> products;
 

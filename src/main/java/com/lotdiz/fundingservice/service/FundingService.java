@@ -11,6 +11,7 @@ import com.lotdiz.fundingservice.dto.response.GetDeliveryResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingAndTotalPageResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingDetailsInfoResponseDto;
+import com.lotdiz.fundingservice.dto.response.GetFundingPaymentInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.PaymentInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductFundingInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
@@ -75,7 +76,7 @@ public class FundingService {
    * @return fundingId(Long)
    */
   @Transactional
-  public void createFunding(CreateFundingRequestDto createFundingRequestDto, Long memberId) {
+  public Long createFunding(CreateFundingRequestDto createFundingRequestDto, Long memberId) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
     // List<productId> 를 찾는다.
@@ -160,6 +161,9 @@ public class FundingService {
     CreateDeliveryRequestDto createDeliveryRequestDto =
         CreateDeliveryRequestDto.toDto(savedFunding, createFundingRequestDto);
     deliveryProducer.sendCreateDelivery(createDeliveryRequestDto);
+
+    // 펀딩Id 반환 (펀딩 상세내역 조회시 필요)
+    return savedFunding.getFundingId();
   }
 
   public FundingAndTotalPageResponseDto getFundingInfoListResponse(
@@ -298,14 +302,14 @@ public class FundingService {
         ProjectAndProductInfoRequestDto.toDto(projectId, productIds);
 
     // 2. 각 product 정보 요청
-        ProjectAndProductInfoResponseDto projectAndProductInfoResponseDto =
-            (ProjectAndProductInfoResponseDto)
-                circuitBreaker.run(
-                    () ->
-                        projectServiceClient
-                            .getProjectAndProductInfo(projectAndProductInfoRequestDto)
-                            .getData(),
-                    throwable -> new ProjectServiceOutOfServiceException());
+    ProjectAndProductInfoResponseDto projectAndProductInfoResponseDto =
+        (ProjectAndProductInfoResponseDto)
+            circuitBreaker.run(
+                () ->
+                    projectServiceClient
+                        .getProjectAndProductInfo(projectAndProductInfoRequestDto)
+                        .getData(),
+                throwable -> new ProjectServiceOutOfServiceException());
 
     // products 정보 합치기
     List<ProductFundingInfoResponseDto> products =
@@ -340,6 +344,13 @@ public class FundingService {
                 () -> deliveryServiceClient.getDeliveryDetail(fundingId).getData().get("delivery"),
                 throwable -> new DeliveryServiceOutOfServiceException());
 
+    // payment-service로 정보 요청
+//    GetFundingPaymentInfoResponseDto getFundingPaymentResponseDto =
+//        (GetFundingPaymentInfoResponseDto)
+//            circuitBreaker.run(
+//                () -> paymentServiceClient.getFundingPaymentInfo(fundingId).getData(),
+//                throwable -> new PaymentServiceOutOfServiceException());
+
     return FundingDetailsInfoResponseDto.builder()
         .projectId(projectId)
         .projectStatus(projectAndMakerInfoResponseDto.getProjectStatus())
@@ -352,6 +363,8 @@ public class FundingService {
         .fundingTotalAmount(funding.getFundingTotalAmount())
         .fundingUsedPoint(funding.getFundingUsedPoint())
         .fundingSupportAmount(funding.getFundingSupportAmount())
+//        .fundingPaymentsActualAmount(getFundingPaymentResponseDto.getFundingPaymentsActualAmount())
+        .fundingMembershipDiscountAmount(funding.getFundingMembershipDiscountAmount())
         .products(products)
         .deliveryCost(getDeliveryResponseDto.getDeliveryCost())
         .deliveryRecipientName(getDeliveryResponseDto.getDeliveryRecipientName())
