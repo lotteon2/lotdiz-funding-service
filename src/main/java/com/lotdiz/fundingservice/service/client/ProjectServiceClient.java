@@ -30,6 +30,6 @@ public interface ProjectServiceClient {
 
   @PostMapping("/projects/get-project-product-info")
   SuccessResponse<ProjectAndProductInfoResponseDto> getProjectAndProductInfo(
-      @RequestParam ProjectAndProductInfoRequestDto projectAndProductInfoRequestDtos);
+      @RequestBody ProjectAndProductInfoRequestDto projectAndProductInfoRequestDtos);
 
 }
