@@ -33,16 +33,16 @@ public class FundingRestController {
   private final SupportWithUsService supportWithUsService;
 
   @PostMapping("/projects/{projectId}/fundings")
-  public ResponseEntity<ResultDataResponse<Object>> createFunding(
+  public ResponseEntity<ResultDataResponse<Long>> createFunding(
       @RequestHeader Long memberId,
       @RequestBody CreateFundingRequestDto createFundingRequestDto) throws IOException {
-    // Funding, ProductFunding 저장.
-    fundingService.createFunding(createFundingRequestDto, memberId);
+    // 펀딩Id 반환
+    Long fundingId = fundingService.createFunding(createFundingRequestDto, memberId);
 
     return ResponseEntity.ok()
         .body(
             new ResultDataResponse<>(
-            String.valueOf(HttpStatus.OK.value()), HttpStatus.OK.name(), "카카오 결제 완료", null));
+            String.valueOf(HttpStatus.OK.value()), HttpStatus.OK.name(), "카카오 결제 완료", fundingId));
   }
 
   @GetMapping("/fundings")
