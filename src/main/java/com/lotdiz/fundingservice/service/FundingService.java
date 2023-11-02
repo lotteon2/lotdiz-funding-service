@@ -294,26 +294,18 @@ public class FundingService {
                 () -> projectServiceClient.getProjectAndMakerInfo(projectIds).getData().get(0),
                 throwable -> new ProjectAndMakerInfoNotFoundException());
 
-//    ProjectAndProductInfoRequestDto projectAndProductInfoRequestDto =
-//        ProjectAndProductInfoRequestDto.toDto(projectId, productIds);
-    ProjectAndProductInfoRequestDto projectAndProductInfoRequestDto = ProjectAndProductInfoRequestDto.builder()
-            .projectId(projectId)
-            .productIds(productIds)
-            .build();
+    ProjectAndProductInfoRequestDto projectAndProductInfoRequestDto =
+        ProjectAndProductInfoRequestDto.toDto(projectId, productIds);
 
     // 2. 각 product 정보 요청
-    //    ProjectAndProductInfoResponseDto projectAndProductInfoResponseDto =
-    //        (ProjectAndProductInfoResponseDto)
-    //            circuitBreaker.run(
-    //                () ->
-    //                    projectServiceClient
-    //                        .getProjectAndProductInfo(projectAndProductInfoRequestDto)
-    //                        .getData(),
-    //                throwable -> new ProjectServiceOutOfServiceException());
-    SuccessResponse<ProjectAndProductInfoResponseDto> successResponse =
-        projectServiceClient.getProjectAndProductInfo(projectAndProductInfoRequestDto);
-    ProjectAndProductInfoResponseDto projectAndProductInfoResponseDto = successResponse.getData();
-
+        ProjectAndProductInfoResponseDto projectAndProductInfoResponseDto =
+            (ProjectAndProductInfoResponseDto)
+                circuitBreaker.run(
+                    () ->
+                        projectServiceClient
+                            .getProjectAndProductInfo(projectAndProductInfoRequestDto)
+                            .getData(),
+                    throwable -> new ProjectServiceOutOfServiceException());
 
     // products 정보 합치기
     List<ProductFundingInfoResponseDto> products =
