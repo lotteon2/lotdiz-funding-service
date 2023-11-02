@@ -1,5 +1,6 @@
 package com.lotdiz.fundingservice.controller.clientcontroller;
 
+import com.lotdiz.fundingservice.dto.request.AchievedResultOfProjectResponseDto;
 import com.lotdiz.fundingservice.dto.request.FundingAchievementResultMapResponseDto;
 import com.lotdiz.fundingservice.dto.request.FundingAchievementResultOfProjectRequestDto;
 import com.lotdiz.fundingservice.dto.request.GetTargetAmountCheckExceedRequestDto;
@@ -93,12 +94,12 @@ public class ProjectClientController {
   }
 
   @PostMapping("/fundings/registered-projects-check")
-  public ResponseEntity<SuccessResponse<FundingAchievementResultMapResponseDto>>
+  public ResponseEntity<SuccessResponse<AchievedResultOfProjectResponseDto>>
       getRegisteredProjectDetail(
           @RequestBody ProjectAmountWithIdRequestDto projectAmountWithIdRequestDto) {
     return ResponseEntity.ok()
         .body(
-            SuccessResponse.<FundingAchievementResultMapResponseDto>builder()
+            SuccessResponse.<AchievedResultOfProjectResponseDto>builder()
                 .code(String.valueOf(HttpStatus.OK.value()))
                 .message(HttpStatus.OK.name())
                 .data(projectClientService.getRegisteredProjectList(projectAmountWithIdRequestDto))
