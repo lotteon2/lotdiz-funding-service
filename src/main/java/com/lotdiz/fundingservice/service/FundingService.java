@@ -7,9 +7,12 @@ import com.lotdiz.fundingservice.dto.request.MemberPointUpdateRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductFundingRequestDto;
 import com.lotdiz.fundingservice.dto.request.ProductStockUpdateRequest;
 import com.lotdiz.fundingservice.dto.request.ProjectAndProductInfoRequestDto;
+import com.lotdiz.fundingservice.dto.response.GetDeliveryResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingAndTotalPageResponseDto;
 import com.lotdiz.fundingservice.dto.response.FundingInfoResponseDto;
+import com.lotdiz.fundingservice.dto.response.FundingDetailsInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.PaymentInfoResponseDto;
+import com.lotdiz.fundingservice.dto.response.ProductFundingInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProductStockCheckResponse;
 import com.lotdiz.fundingservice.dto.response.ProjectAndMakerInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ProjectAndProductInfoResponseDto;
@@ -17,6 +20,7 @@ import com.lotdiz.fundingservice.entity.Funding;
 import com.lotdiz.fundingservice.entity.FundingStatus;
 import com.lotdiz.fundingservice.entity.ProductFunding;
 import com.lotdiz.fundingservice.entity.SupporterWithUs;
+import com.lotdiz.fundingservice.exception.DeliveryServiceOutOfServiceException;
 import com.lotdiz.fundingservice.exception.DeliveryStatusNotFoundException;
 import com.lotdiz.fundingservice.exception.FundingEntityNotFoundException;
 import com.lotdiz.fundingservice.exception.MemberServiceClientOutOfServiceException;
@@ -24,7 +28,6 @@ import com.lotdiz.fundingservice.exception.MemberServiceOutOfServiceException;
 import com.lotdiz.fundingservice.exception.PaymentInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.PaymentServiceOutOfServiceException;
 import com.lotdiz.fundingservice.exception.ProjectAndMakerInfoNotFoundException;
-import com.lotdiz.fundingservice.exception.ProjectAndProductInfoNotFoundException;
 import com.lotdiz.fundingservice.exception.ProjectServiceOutOfServiceException;
 import com.lotdiz.fundingservice.messagequeue.kafka.DeliveryProducer;
 import com.lotdiz.fundingservice.repository.FundingRepository;
@@ -36,6 +39,7 @@ import com.lotdiz.fundingservice.service.client.PaymentServiceClient;
 import com.lotdiz.fundingservice.service.client.ProjectServiceClient;
 import com.lotdiz.fundingservice.service.manager.FundingProductManager;
 import com.lotdiz.fundingservice.utils.SuccessResponse;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -263,36 +267,107 @@ public class FundingService {
    * @return projectAndProductInfoResponseDtos (List<ProjectAndProductInfoResponseDto>)
    */
   @Transactional
-  public ProjectAndProductInfoResponseDto getFundingDetailsResponse(Long fundingId) {
+  public FundingDetailsInfoResponseDto getFundingDetailsResponse(Long fundingId) {
     CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitBreaker");
 
-    // 프로젝트 id 찾기
+    // 펀딩 entity 찾기
     Funding funding =
         fundingRepository
             .findByFundingId(fundingId)
             .orElseThrow(FundingEntityNotFoundException::new);
 
+    // 프로젝트 id 찾기
     Long projectId = funding.getProjectId();
+    List<Long> projectIds = new ArrayList<>();
+    projectIds.add(projectId);
 
     // 상품 ids 찾기
     List<ProductFunding> productFundings = productFundingRepository.findByFunding(funding);
     List<Long> productIds =
         productFundings.stream().map(ProductFunding::getProductId).collect(Collectors.toList());
 
-    ProjectAndProductInfoRequestDto projectAndProductInfoRequestDto =
-        ProjectAndProductInfoRequestDto.toDto(projectId, productIds);
-
     // project-service로 정보 요청
-    ProjectAndProductInfoResponseDto projectAndProductInfoResponseDtos =
-        (ProjectAndProductInfoResponseDto)
+    // 1. project 정보 요청 (단일 정보 요청)
+    ProjectAndMakerInfoResponseDto projectAndMakerInfoResponseDto =
+        (ProjectAndMakerInfoResponseDto)
             circuitBreaker.run(
-                () ->
-                    projectServiceClient
-                        .getProjectAndProductInfo(projectAndProductInfoRequestDto)
-                        .getData(),
-                throwable -> new ProjectAndProductInfoNotFoundException());
+                () -> projectServiceClient.getProjectAndMakerInfo(projectIds).getData().get(0),
+                throwable -> new ProjectAndMakerInfoNotFoundException());
 
-    return projectAndProductInfoResponseDtos;
+//    ProjectAndProductInfoRequestDto projectAndProductInfoRequestDto =
+//        ProjectAndProductInfoRequestDto.toDto(projectId, productIds);
+    ProjectAndProductInfoRequestDto projectAndProductInfoRequestDto = ProjectAndProductInfoRequestDto.builder()
+            .projectId(projectId)
+            .productIds(productIds)
+            .build();
+
+    // 2. 각 product 정보 요청
+    //    ProjectAndProductInfoResponseDto projectAndProductInfoResponseDto =
+    //        (ProjectAndProductInfoResponseDto)
+    //            circuitBreaker.run(
+    //                () ->
+    //                    projectServiceClient
+    //                        .getProjectAndProductInfo(projectAndProductInfoRequestDto)
+    //                        .getData(),
+    //                throwable -> new ProjectServiceOutOfServiceException());
+    SuccessResponse<ProjectAndProductInfoResponseDto> successResponse =
+        projectServiceClient.getProjectAndProductInfo(projectAndProductInfoRequestDto);
+    ProjectAndProductInfoResponseDto projectAndProductInfoResponseDto = successResponse.getData();
+
+
+    // products 정보 합치기
+    List<ProductFundingInfoResponseDto> products =
+        projectAndProductInfoResponseDto.getProducts().stream()
+            .map(
+                productInfo -> {
+                  ProductFundingInfoResponseDto.ProductFundingInfoResponseDtoBuilder builder =
+                      ProductFundingInfoResponseDto.builder()
+                          .productId(productInfo.getProductId())
+                          .productName(productInfo.getProductName())
+                          .productDescription(productInfo.getProductDescription());
+
+                  productFundings.stream()
+                      .filter(
+                          productfunding ->
+                              productfunding.getProductId().equals(productInfo.getProductId()))
+                      .findFirst()
+                      .ifPresent(
+                          productfunding -> {
+                            builder
+                                .productFundingPrice(productfunding.getProductFundingPrice())
+                                .productFundingQuantity(productfunding.getProductFundingQuantity());
+                          });
+                  return builder.build();
+                })
+            .collect(Collectors.toList());
+
+    // delivery-service로 정보 요청
+    GetDeliveryResponseDto getDeliveryResponseDto =
+        (GetDeliveryResponseDto)
+            circuitBreaker.run(
+                () -> deliveryServiceClient.getDeliveryDetail(fundingId).getData().get("delivery"),
+                throwable -> new DeliveryServiceOutOfServiceException());
+
+    return FundingDetailsInfoResponseDto.builder()
+        .projectId(projectId)
+        .projectStatus(projectAndMakerInfoResponseDto.getProjectStatus())
+        .projectName(projectAndMakerInfoResponseDto.getProjectName())
+        .makerName(projectAndMakerInfoResponseDto.getMakerName())
+        .fundingId(fundingId)
+        .createdAt(funding.getCreatedAt())
+        .endDate((LocalDateTime.now()).plusDays(projectAndMakerInfoResponseDto.getRemainingDays()))
+        .fundingStatus(String.valueOf(funding.getFundingStatus()))
+        .fundingTotalAmount(funding.getFundingTotalAmount())
+        .fundingUsedPoint(funding.getFundingUsedPoint())
+        .fundingSupportAmount(funding.getFundingSupportAmount())
+        .products(products)
+        .deliveryCost(getDeliveryResponseDto.getDeliveryCost())
+        .deliveryRecipientName(getDeliveryResponseDto.getDeliveryRecipientName())
+        .deliveryRecipientPhoneNumber(getDeliveryResponseDto.getDeliveryRecipientPhoneNumber())
+        .deliveryRoadName(getDeliveryResponseDto.getDeliveryRoadName())
+        .deliveryAddressDetail(getDeliveryResponseDto.getDeliveryAddressDetail())
+        .deliveryZipcode(getDeliveryResponseDto.getDeliveryZipcode())
+        .build();
   }
 
   /**
