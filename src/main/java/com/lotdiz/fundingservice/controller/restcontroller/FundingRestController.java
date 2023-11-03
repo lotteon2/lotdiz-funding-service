@@ -2,7 +2,7 @@ package com.lotdiz.fundingservice.controller.restcontroller;
 
 import com.lotdiz.fundingservice.dto.request.CreateFundingRequestDto;
 import com.lotdiz.fundingservice.dto.response.FundingAndTotalPageResponseDto;
-import com.lotdiz.fundingservice.dto.response.ProjectAndProductInfoResponseDto;
+import com.lotdiz.fundingservice.dto.response.FundingDetailsInfoResponseDto;
 import com.lotdiz.fundingservice.dto.response.ResultDataResponse;
 import com.lotdiz.fundingservice.dto.response.SupportWithUsResponseDto;
 import com.lotdiz.fundingservice.service.FundingService;
@@ -33,16 +33,16 @@ public class FundingRestController {
   private final SupportWithUsService supportWithUsService;
 
   @PostMapping("/projects/{projectId}/fundings")
-  public ResponseEntity<ResultDataResponse<Object>> createFunding(
+  public ResponseEntity<ResultDataResponse<Long>> createFunding(
       @RequestHeader Long memberId,
       @RequestBody CreateFundingRequestDto createFundingRequestDto) throws IOException {
-    // Funding, ProductFunding 저장.
-    fundingService.createFunding(createFundingRequestDto, memberId);
+    // 펀딩Id 반환
+    Long fundingId = fundingService.createFunding(createFundingRequestDto, memberId);
 
     return ResponseEntity.ok()
         .body(
             new ResultDataResponse<>(
-            String.valueOf(HttpStatus.OK.value()), HttpStatus.OK.name(), "카카오 결제 완료", null));
+            String.valueOf(HttpStatus.OK.value()), HttpStatus.OK.name(), "카카오 결제 완료", fundingId));
   }
 
   @GetMapping("/fundings")
@@ -66,15 +66,15 @@ public class FundingRestController {
   }
 
   @GetMapping("/fundings/{fundingId}")
-  public ResponseEntity<SuccessResponse<Map<String, ProjectAndProductInfoResponseDto>>>
+  public ResponseEntity<SuccessResponse<Map<String, FundingDetailsInfoResponseDto>>>
       getFundingDetails(@PathVariable Long fundingId) {
 
-    ProjectAndProductInfoResponseDto projectAndProductInfoResponseDto =
+    FundingDetailsInfoResponseDto projectAndProductInfoResponseDto =
         fundingService.getFundingDetailsResponse(fundingId);
 
     return ResponseEntity.ok()
         .body(
-            SuccessResponse.<Map<String, ProjectAndProductInfoResponseDto>>builder()
+            SuccessResponse.<Map<String, FundingDetailsInfoResponseDto>>builder()
                 .code(String.valueOf(HttpStatus.OK.value()))
                 .message(HttpStatus.OK.name())
                 .detail("펀딩 내역 상세 조회 성공")
